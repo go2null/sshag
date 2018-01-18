@@ -7,7 +7,7 @@ main() {
 	# If we are not being sourced, but rather running as a subshell,
 	# let people know how to use the output.
 	if [ "${0#*sshag}" != "$0" ]; then
-		sshag_msg='Output should be assigned to the environment variable $SSH_AUTH_SOCK.'
+		sshag_msg='Output should be assigned to the environment variable SSH_AUTH_SOCK.'
 		sshag "$@"
 	fi
 }
@@ -15,6 +15,10 @@ main() {
 sshag() {
 	# ssh agent sockets can be attached to an ssh daemon process
 	# or an ssh-agent process.
+	case "$1" in
+	install) sshag_install; return $? ;;
+	update)  sshag_update;  return $? ;;
+	esac
 
 	sshag_require_ssh
 	unset agent_found
@@ -175,6 +179,80 @@ sshag_get_identity() {
 		sshag_identity="$(expand_tilde "$sshag_identity")"
 	fi
 }
+
+# INSTALL
+
+sshag_install() (
+	# check system or user installation
+	if [ "$USER" = 'root' ]; then
+		lib='/usr/local/lib'
+	else
+		lib="${XDG_DATA_HOME:=$HOME/.local/share}/../lib"
+	fi
+	mkdir -p "$lib"
+
+	# download
+	cd "$lib"
+  git clone 'https://github.com/go2null/sshag.git'
+	print_line "'sshag' installed to '$lib'"
+
+	# add to shell startup files
+  CONFIG=". $lib/sshag/sshag.sh; sshag >/dev/null"
+	if [ "$USER" = 'root' ]; then
+		if touch '/etc/profile.d/sshag.sh' 2>/dev/null; then
+			sshag_install_profile '/etc/profile.d/sshag.sh'
+		else
+			sshag_install_profile '/etc/profile'
+		fi
+	else
+		sshag_install_profile "$HOME/.bash_profile" \
+			|| sshag_install_profile "$HOME/.profile"
+	fi
+	sshag_install_profile "$HOME/.bashrc"
+	sshag_install_profile "$HOME/.zshrc"
+
+	# allow user to do it manually as well
+	print_line "Add the following to any additional shell startup files:"
+	print_line "    $CONFIG"
+)
+
+sshag_install_profile() {
+	if [ -e "$1" ]; then
+		print_line "$CONFIG" >> "$1"
+		print_line "'sshag' added to startup file '$1'"
+		return 0
+	else
+		return 1
+	fi
+}
+
+sshag_update() (
+	unset repo
+	unset SUDO
+
+	custom_repo="$2"
+	user_repo="${XDG_DATA_HOME:=$HOME/.local/share}/../lib/sshag"
+	system_repo='/usr/local/sshag'
+
+	[ -n "$custom_repo" ] && [ -d "$custom_repo" ]       && repo="$custom_repo"
+	[ -n "$custom_repo" ] && [ -d "$custom_repo/sshag" ] && repo="$custom_repo/sshag"
+	[ -z "$repo" ]        && [ -d "$user_repo" ]         && repo="$user_repo"
+	[ -z "$repo" ]        && [ -d "$system_repo" ]       && repo="$system_repo"
+
+	if [ -z "$repo" ]; then
+		print_error "Cannot find 'sshag' repo at either"
+		[ -n "$custom_repo" ] &&  print_error " '$custom_repo', or"
+		print_error " '$user_repo', or"
+		exit_error " '$system_repo'."
+	else
+		print_line "Updating 'sshag' at '$repo'."
+	fi
+
+	[ "$repo" = "$system_repo" ] && SUDO='sudo'
+
+	cd "$repo"
+	$SUDO sh -c 'git pull'
+)
 
 # HELPERS
 

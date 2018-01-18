@@ -3,50 +3,76 @@
 
 ## "Socket to me, baby!"
 
-This is a sourceable shell include file which provides a `sshag` function
-to conveniently hook up with an operating ssh-agent.
+This is a sourceable shell include file which provides a `sshag` function to
+conveniently hook up with an operating `ssh-agent`.
 
 It will start a new agent session if it doesn't find an agent to connect with.
 
-You might want to source it from within your `~/.bashrc` file
-or other profile script.
+You might want to source it from within your `~/.bashrc` file or other profile
+script.
 
-It can also be run as an executable script,
-and its output stored in the relevant environment variable.
-This is particularly useful when it is desired
+It can also be run as an executable script, and its output stored in the
+relevant environment variable.  This is particularly useful when it is desired
 to configure a non-shell environment, for example, that of a text editor.
 
 Messages are emitted on standard out;
 the output will always consist of just the socket location.
+
+
+## Installation:
+
+Automatic Install:
+
+```sh
+shag install [<optional/custom/install/path>]
+```
+
+Automatic Update:
+
+```sh
+sshag update [<optional/custom/install/path>]
+```
+
+Manual Install:
+
+```sh
+cd "$custom_install_path"
+git clone 'https://github.com/go2null/sshag.git'
+
+# then add the following to your shell startup file (`~/.bashrc`, `~/.zshrc`):
+# note the leading `.`
+. <path/to/sshag.sh>; sshag >/dev/null
+```
+
+Manual Update:
+```sh
+cd "$custom_install_path/sshag"
+git pull
+```
+
 
 ## Usage:
 
 Sourced:
 
 ```sh
-    $ ssh alotta@fagina.example.com
-    Enter passphrase for key '/home/austin/.ssh/id_dsa': ^C
-    $ . ~/lib/sshag/sshag.sh
-    $ sshag alotta@fagina.example.com
-    Keys:
-        2048 0d:db:a1:1a:cc:01:ad:ec:ab:00:d1:ed:eb:ac:1e:00 /home/austin/.ssh/id_dsa (DSA)
-    /tmp/ssh-5ock3tt0m3/agent.6969
+$ ssh alotta@fagina.example.com
+Enter passphrase for key '/home/austin/.ssh/id_ed25519': ^C
+$ sshag alotta@fagina.example.com
+Keys:
+    256 SHA256:2TWr3x/H6eGvE+vx9Ur8uFQWBIXTBH3jT12yHBB4TJY austin@powers (ED25519)
+/tmp/ssh-5ock3tt0m3/agent.6969
 ```
 
 Invoked:
 
 ```sh
-    $ export SSH_AGENT_SOCK=$(sh ~/lib/sshag/sshag.sh)
-    Output should be assigned to the environment variable $SSH_AUTH_SOCK.
-    Keys:
-        2048 0d:db:a1:1a:cc:01:ad:ec:ab:00:d1:ed:eb:ac:1e:00 /home/austin/.ssh/id_dsa (DSA)
+$ export SSH_AGENT_SOCK=$(sh ~/.local/lib/sshag/sshag.sh)
+Output should be assigned to the environment variable SSH_AUTH_SOCK.
+Keys:
+    256 SHA256:2TWr3x/H6eGvE+vx9Ur8uFQWBIXTBH3jT12yHBB4TJY austin@powers (ED25519)
 ```
 
-Appended to `~/.bashrc`:
-
-```sh
-    . ~/lib/sshag/sshag.sh; sshag >/dev/null 2>&1
-```
 
 ## History
 
@@ -62,6 +88,8 @@ Appended to `~/.bashrc`:
     - *go2null*: Accept socket passed in.
     - *go2null*: Accept `user@host` parameter (ala **AddKeysToAgent**) feature,
           so can use `sshag user@domain` instead of `ssh user@domain`.
+-   v1.3.20180117
+    - *go2null*: New `install` and `update` functions.
 
 ## Licensing
 
