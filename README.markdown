@@ -90,6 +90,8 @@ Keys:
           so can use `sshag user@domain` instead of `ssh user@domain`.
 -   v1.3.20180117
     - *go2null*: New `install` and `update` functions.
+-   v1.4.20180123
+    - *go2null*: Allow passing arguments/options to `ssh`.
 
 ## Licensing
 

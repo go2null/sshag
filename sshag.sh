@@ -12,28 +12,38 @@ main() {
 	fi
 }
 
+# calling syntax
+# sshag install [dest_dir] - install
+# sshag update [dest_dir]  - update
+# sshag                    - start/use agent
+# sshag agent-socket       - use specified agent
+# sshag user@host [ssh-options-and-args] - start agent and ssh to user@host
 sshag() {
 	# ssh agent sockets can be attached to an ssh daemon process
 	# or an ssh-agent process.
-	case "$1" in
-	install) shift; sshag_install "$@"; return $? ;;
-	update)  shift; sshag_update "$@";  return $? ;;
-	esac
 
-	sshag_require_ssh
+	unset ssh_args
 	unset agent_found
 	unset agent_socket
 	unset user_hostname
 
-	# check any params
-	while [ -n "$1" ]; do
-		if [ -e "$1" ] ; then
-			[ -S "$1" ] && agent_socket="$1"
-		else
-			user_hostname="$1"
-		fi
+	while [ $# -gt 0 ]; do
+		case "$1" in
+		install) shift; sshag_install "$@"; return $? ;;
+		update)  shift; sshag_update "$@";  return $? ;;
+		-*) ssh_args="$ssh_args $1" ;;
+		*)
+			if [ -e "$1" ] ; then
+				[ -S "$1" ] && agent_socket="$1"
+			else
+				user_hostname="$1"
+			fi
+			;;
+		esac
 		shift
 	done
+
+	sshag_require_ssh
 
 	# Attempt to use socket passed in, or
 	#   find and use the ssh-agent in the current environment
@@ -53,7 +63,7 @@ sshag() {
 	[ -z "$agent_found" ] &&  eval "$(ssh-agent)"
 
 	if [ -n "$user_hostname" ]; then
-		sshag_do_ssh "$user_hostname"
+		sshag_do_ssh "$user_hostname" "$ssh_args"
 	else
 		# Display the found socket
 		if [ "$sshag_msg" ]; then
@@ -108,7 +118,7 @@ sshag_get_sockets() {
 }
 
 # Load first key for specified user@hostname and start `ssh`.
-sshag_do_ssh() {
+sshag_do_ssh() (
 	# This is needed for OpenSSH before v7.2 which added support AddKeysToAgent
 	# Or if the local ssh client support AddKeysToAgent,
 	# but it is not set in the ~/.ssh/config
@@ -120,20 +130,23 @@ sshag_do_ssh() {
 	# (OpenSSH before v7.2 barfs on params it doesn't know about so can't use
 	# it in a common ssh_config where some machines have pre v7.2 OpenSSH.)
 
+	user_host="$1"
+	shift
+	ssh_args="$@"
+
 	if sshag_config_has_add_keys; then
 		# Honor AddKeysToAgent settings
 		: # do nothing
 	elif ssh -o AddKeysToAgent 2>&1 | grep 'missing argument' >/dev/null; then
 		# If this ssh supports AddKeyToAgent, then use it
-		sshag_args='-o AddKeysToAgent=yes'
+		ssh_args="$ssh_args -o AddKeysToAgent=yes"
 	else
 		# This is needed for OpenSSH pre v7.2, when AddKeysToAgent was added
 		sshag_add_key_to_agent "$1"
 	fi
 
-	ssh "$sshag_args" "$1"
-	unset sshag_args
-}
+	ssh $ssh_args "$user_host"
+)
 
 # Checks is ~/.ssh/config has
 sshag_config_has_add_keys() {
