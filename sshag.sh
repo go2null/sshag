@@ -16,8 +16,8 @@ sshag() {
 	# ssh agent sockets can be attached to an ssh daemon process
 	# or an ssh-agent process.
 	case "$1" in
-	install) sshag_install; return $? ;;
-	update)  sshag_update;  return $? ;;
+	install) shift; sshag_install "$@"; return $? ;;
+	update)  shift; sshag_update "$@";  return $? ;;
 	esac
 
 	sshag_require_ssh
@@ -183,21 +183,33 @@ sshag_get_identity() {
 # INSTALL
 
 sshag_install() (
-	# check system or user installation
-	if [ "$USER" = 'root' ]; then
-		lib='/usr/local/lib'
+	unset dir
+
+	custom_dir="$1"
+	user_dir="${XDG_DATA_HOME:=$HOME/.local/share}/../lib"
+	system_dir='/usr/local/lib'
+
+	[ -n "$custom_dir" ]                  && mkdir -p "$custom_dir" && dir="$custom_dir"
+	[ -z "$dir" ] && [ "$USER" = 'root' ] && mkdir -p "$system_dir" && dir="$system_dir"
+	[ -z "$dir" ]                         && mkdir -p "$user_dir"   && dir="$user_dir"
+
+	if [ -z "$dir" ]; then
+		print_error "Cannot create 'sshag' repo at either"
+		[ -n "$custom_dir" ] &&  print_error " '$custom_dir', or"
+		print_error " '$user_dir', or"
+		exit_error " '$system_dir'."
 	else
-		lib="${XDG_DATA_HOME:=$HOME/.local/share}/../lib"
+		print_line "Installing 'sshag' to '$dir'."
 	fi
-	mkdir -p "$lib"
 
 	# download
-	cd "$lib"
+	cd "$dir"
+	dir="$PWD" # get rid off `/../`  in `user_dir`
   git clone 'https://github.com/go2null/sshag.git'
-	print_line "'sshag' installed to '$lib'"
+	print_line "'sshag' installed to '$dir'"
 
 	# add to shell startup files
-  CONFIG=". $lib/sshag/sshag.sh; sshag >/dev/null"
+  CONFIG=". $dir/sshag/sshag.sh; sshag >/dev/null"
 	if [ "$USER" = 'root' ]; then
 		if touch '/etc/profile.d/sshag.sh' 2>/dev/null; then
 			sshag_install_profile '/etc/profile.d/sshag.sh'
@@ -220,37 +232,37 @@ sshag_install_profile() {
 	if [ -e "$1" ]; then
 		print_line "$CONFIG" >> "$1"
 		print_line "'sshag' added to startup file '$1'"
-		return 0
+		return
 	else
 		return 1
 	fi
 }
 
 sshag_update() (
-	unset repo
+	unset dir
 	unset SUDO
 
-	custom_repo="$2"
-	user_repo="${XDG_DATA_HOME:=$HOME/.local/share}/../lib/sshag"
-	system_repo='/usr/local/sshag'
+	custom_dir="$1"
+	user_dir="${XDG_DATA_HOME:=$HOME/.local/share}/../lib/sshag"
+	system_dir='/usr/local/lib/sshag'
 
-	[ -n "$custom_repo" ] && [ -d "$custom_repo" ]       && repo="$custom_repo"
-	[ -n "$custom_repo" ] && [ -d "$custom_repo/sshag" ] && repo="$custom_repo/sshag"
-	[ -z "$repo" ]        && [ -d "$user_repo" ]         && repo="$user_repo"
-	[ -z "$repo" ]        && [ -d "$system_repo" ]       && repo="$system_repo"
+	[ -n "$custom_dir" ] && [ -d "$custom_dir" ]       && dir="$custom_dir"
+	[ -n "$custom_dir" ] && [ -d "$custom_dir/sshag" ] && dir="$custom_dir/sshag"
+	[ -z "$dir" ]        && [ -d "$user_dir" ]         && dir="$user_dir"
+	[ -z "$dir" ]        && [ -d "$system_dir" ]       && dir="$system_dir"
 
-	if [ -z "$repo" ]; then
+	if [ -z "$dir" ]; then
 		print_error "Cannot find 'sshag' repo at either"
-		[ -n "$custom_repo" ] &&  print_error " '$custom_repo', or"
-		print_error " '$user_repo', or"
-		exit_error " '$system_repo'."
+		[ -n "$custom_dir" ] &&  print_error " '$custom_dir', or"
+		print_error " '$user_dir', or"
+		exit_error " '$system_dir'."
 	else
-		print_line "Updating 'sshag' at '$repo'."
+		print_line "Updating 'sshag' at '$dir'."
 	fi
 
-	[ "$repo" = "$system_repo" ] && SUDO='sudo'
+	[ "$dir" = "$system_dir" ] && SUDO='sudo'
 
-	cd "$repo"
+	cd "$dir"
 	$SUDO sh -c 'git pull'
 )
 
