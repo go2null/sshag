@@ -76,22 +76,7 @@ Keys:
 
 ## History
 
--   v0.0.20100514
-    - *Zed*: http://superuser.com/a/141241
--   v1.0.20100726
-    - *intuited*: renamed from `sagent` to `sshag`. Add readme and license documents.
--   v1.1.20110220
-    - *intuited*: Made it convenient to run the script in a subshell.
--   v1.2.20160825
-    - *go2null*: Make script POSIX compliant.
-    - *go2null*: Search `$TMPDIR` for agents as well, per OpenSSH man page.
-    - *go2null*: Accept socket passed in.
-    - *go2null*: Accept `user@host` parameter (ala **AddKeysToAgent**) feature,
-          so can use `sshag user@domain` instead of `ssh user@domain`.
--   v1.3.20180117
-    - *go2null*: New `install` and `update` functions.
--   v1.4.20180123
-    - *go2null*: Allow passing arguments/options to `ssh`.
+See [CHANGELOG.md].
 
 ## Licensing
 
@@ -101,7 +86,7 @@ Creative Commons Attribution-Sharealike License,
 so I'm attributing it to the superuser.com user [Zed].
 SU currently links to [version 2.5] of the license.
 
-A copy of [the full license] is distributed herein in the file COPYING.
+A copy of [the full license] is distributed herein in the file [COPYING].
 
 ### The basic gist of the license
 
@@ -139,12 +124,14 @@ A copy of [the full license] is distributed herein in the file COPYING.
     to others the license terms of this work. The best way to do this
     is with a link to this web page.
 
-[response]: http://superuser.com/questions/141044/sharing-the-same-ssh-agent-among-multiple-login-sessions#answer-141241
+[CHANGELOG.md]: https://github.com/go2null/sshag/blob/master/CHANGELOG.md
+[COPYING]: https://github.com/go2null/sshag/blob/master/COPYING
 [Zed]: http://superuser.com/users/33648/zed
-[version 2.5]: http://creativecommons.org/licenses/by-sa/2.5/
-[the full license]: http://creativecommons.org/licenses/by-sa/2.5/legalcode
-[waived]: http://wiki.creativecommons.org/Frequently_Asked_Questions#Can_I_change_the_terms_of_a_CC_license_or_waive_some_of_its_conditions.3F
-[public domain]: http://wiki.creativecommons.org/Public_domain
 [fair use]: http://wiki.creativecommons.org/Frequently_Asked_Questions#Do_Creative_Commons_licenses_affect_fair_use.2C_fair_dealing_or_other_exceptions_to_copyright.3F
 [moral]: http://wiki.creativecommons.org/Frequently_Asked_Questions#I_don.E2.80.99t_like_the_way_a_person_has_used_my_work_in_a_derivative_work_or_included_it_in_a_collective_work.3B_what_can_I_do.3F
+[public domain]: http://wiki.creativecommons.org/Public_domain
 [publicity]: http://wiki.creativecommons.org/Frequently_Asked_Questions#When_are_publicity_rights_relevant.3F
+[response]: http://superuser.com/questions/141044/sharing-the-same-ssh-agent-among-multiple-login-sessions#answer-141241
+[the full license]: http://creativecommons.org/licenses/by-sa/2.5/legalcode
+[version 2.5]: http://creativecommons.org/licenses/by-sa/2.5/
+[waived]: http://wiki.creativecommons.org/Frequently_Asked_Questions#Can_I_change_the_terms_of_a_CC_license_or_waive_some_of_its_conditions.3F
