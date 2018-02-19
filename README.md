@@ -21,6 +21,25 @@ the output will always consist of just the socket location.
 
 ## Installation:
 
+## Recommended installation method
+
+Use [pearl] package manager.
+```sh
+# add repo
+printf '%s=%s\n' "PEARL_PACKAGES['sshag']" \
+	"'https://github.com/go2null/sshag.git'" \
+	>> "$HOME/.config/pearl/pearl.conf"
+printf '%s=%s\n' "PEARL_PACKAGES_DESCR['sshag']" \
+	"'Hook up with an operating or new SSH agent'" \
+	>> "$HOME/.config/pearl/pearl.conf"
+# install
+pearl install sshag
+# update
+pearl update sshag
+```
+
+### Built-in installation
+
 Automatic Install:
 
 ```sh
@@ -124,11 +143,13 @@ A copy of [the full license] is distributed herein in the file [COPYING].
     to others the license terms of this work. The best way to do this
     is with a link to this web page.
 
+
 [CHANGELOG.md]: https://github.com/go2null/sshag/blob/master/CHANGELOG.md
 [COPYING]: https://github.com/go2null/sshag/blob/master/COPYING
 [Zed]: http://superuser.com/users/33648/zed
 [fair use]: http://wiki.creativecommons.org/Frequently_Asked_Questions#Do_Creative_Commons_licenses_affect_fair_use.2C_fair_dealing_or_other_exceptions_to_copyright.3F
 [moral]: http://wiki.creativecommons.org/Frequently_Asked_Questions#I_don.E2.80.99t_like_the_way_a_person_has_used_my_work_in_a_derivative_work_or_included_it_in_a_collective_work.3B_what_can_I_do.3F
+[pearl]: https://github.com/pearl-core/pearl#installation
 [public domain]: http://wiki.creativecommons.org/Public_domain
 [publicity]: http://wiki.creativecommons.org/Frequently_Asked_Questions#When_are_publicity_rights_relevant.3F
 [response]: http://superuser.com/questions/141044/sharing-the-same-ssh-agent-among-multiple-login-sessions#answer-141241
