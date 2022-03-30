@@ -105,7 +105,7 @@ Creative Commons Attribution-Sharealike License,
 so I'm attributing it to the superuser.com user [Zed].
 SU currently links to [version 2.5] of the license.
 
-A copy of [the full license] is distributed herein in the file [COPYING].
+A copy of [the full license] is distributed herein in the file [LICENSE].
 
 ### The basic gist of the license
 
@@ -145,7 +145,7 @@ A copy of [the full license] is distributed herein in the file [COPYING].
 
 
 [CHANGELOG.md]: https://github.com/go2null/sshag/blob/master/CHANGELOG.md
-[COPYING]: https://github.com/go2null/sshag/blob/master/COPYING
+[LICENSE]: https://github.com/go2null/sshag/blob/master/LICENSE
 [Zed]: http://superuser.com/users/33648/zed
 [fair use]: http://wiki.creativecommons.org/Frequently_Asked_Questions#Do_Creative_Commons_licenses_affect_fair_use.2C_fair_dealing_or_other_exceptions_to_copyright.3F
 [moral]: http://wiki.creativecommons.org/Frequently_Asked_Questions#I_don.E2.80.99t_like_the_way_a_person_has_used_my_work_in_a_derivative_work_or_included_it_in_a_collective_work.3B_what_can_I_do.3F
