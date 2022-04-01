@@ -22,9 +22,9 @@ the output will always consist of just the socket location.
 
 ### Recommended installation method
 
-Use [pearl] package manager.
+Use the [pearl] package manager.
 ```sh
-# add repo
+# install
 printf '%s=%s\n'                                 \
 	"PEARL_PACKAGES['sshag']"                \
 	"'https://github.com/go2null/sshag.git'" \
@@ -33,38 +33,23 @@ printf '%s=%s\n' \
 	"PEARL_PACKAGES_DESCR['sshag']" \
 	"'Hook up with an operating or new SSH agent'" \
 	>> "$HOME/.config/pearl/pearl.conf"
-# install
 pearl install sshag
+
 # update
 pearl update sshag
 ```
 
-### Built-in installation
+### Manual installation
 
-Automatic Install
 ```sh
-sshag install [<optional/custom/install/path>]
-```
+# install
+wget https://raw.githubusercontent.com/go2null/sshag/stable/sshag.sh
+. sshag.sh
+rm sshag.sh
+sshag install
 
-Automatic Update
-```sh
-sshag update [<optional/custom/install/path>]
-```
-
-Manual Install
-```sh
-cd /custom/install/path
-git clone 'https://github.com/go2null/sshag.git'
-
-# then add the following to your shell startup file (`~/.bashrc`, `~/.zshrc`):
-# note the leading dot (`.`) which is the POSIX `source` command.
-. <path/to/sshag.sh>; sshag >/dev/null
-```
-
-Manual Update
-```sh
-cd /custom/install/path/sshag"
-git pull
+# update
+sshag update
 ```
 
 ## Usage

@@ -1,7 +1,8 @@
 #!/bin/sh
 
 # acquired courtesy of
-# http://superuser.com/questions/141044/sharing-the-same-ssh-agent-among-multiple-login-sessions#answer-141241
+#   http://superuser.com/questions/141044/sharing-the-same-ssh-agent-among-multiple-login-sessions#answer-141241
+# Project at: https://github.com/go2null/sshag
 
 sshag_running_as_command() {
 	[ "${0#*sshag}" != "$0" ]
@@ -71,7 +72,7 @@ sshag_agent_get_socket() {
 	# before starting a fresh ssh-agent process.
 	# ssh agent sockets can be attached to an ssh daemon process
 	# or an ssh-agent process.
-	for agent_socket in $(sshag_agent_find_sockets) ; do
+	for agent_socket in $(sshag_agent_find_sockets); do
 		sshag_agent_vet_socket "$agent_socket" && return
 	done
 
