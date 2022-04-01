@@ -1,5 +1,4 @@
-`sshag`
-=======
+# `sshag`
 
 ## "Socket to me, baby!"
 
@@ -19,17 +18,19 @@ Messages are emitted on standard out;
 the output will always consist of just the socket location.
 
 
-## Installation:
+## Installation
 
-## Recommended installation method
+### Recommended installation method
 
 Use [pearl] package manager.
 ```sh
 # add repo
-printf '%s=%s\n' "PEARL_PACKAGES['sshag']" \
+printf '%s=%s\n'                                 \
+	"PEARL_PACKAGES['sshag']"                \
 	"'https://github.com/go2null/sshag.git'" \
 	>> "$HOME/.config/pearl/pearl.conf"
-printf '%s=%s\n' "PEARL_PACKAGES_DESCR['sshag']" \
+printf '%s=%s\n' \
+	"PEARL_PACKAGES_DESCR['sshag']" \
 	"'Hook up with an operating or new SSH agent'" \
 	>> "$HOME/.config/pearl/pearl.conf"
 # install
@@ -40,40 +41,35 @@ pearl update sshag
 
 ### Built-in installation
 
-Automatic Install:
-
+Automatic Install
 ```sh
-shag install [<optional/custom/install/path>]
+sshag install [<optional/custom/install/path>]
 ```
 
-Automatic Update:
-
+Automatic Update
 ```sh
 sshag update [<optional/custom/install/path>]
 ```
 
-Manual Install:
-
+Manual Install
 ```sh
-cd "$custom_install_path"
+cd /custom/install/path
 git clone 'https://github.com/go2null/sshag.git'
 
 # then add the following to your shell startup file (`~/.bashrc`, `~/.zshrc`):
-# note the leading `.`
+# note the leading dot (`.`) which is the POSIX `source` command.
 . <path/to/sshag.sh>; sshag >/dev/null
 ```
 
-Manual Update:
+Manual Update
 ```sh
-cd "$custom_install_path/sshag"
+cd /custom/install/path/sshag"
 git pull
 ```
 
+## Usage
 
-## Usage:
-
-Sourced:
-
+Sourced
 ```sh
 $ ssh alotta@fagina.example.com
 Enter passphrase for key '/home/austin/.ssh/id_ed25519': ^C
@@ -83,15 +79,13 @@ Keys:
 /tmp/ssh-5ock3tt0m3/agent.6969
 ```
 
-Invoked:
-
+Invoked
 ```sh
 $ export SSH_AGENT_SOCK=$(sh ~/.local/lib/sshag/sshag.sh)
 Output should be assigned to the environment variable SSH_AUTH_SOCK.
 Keys:
     256 SHA256:2TWr3x/H6eGvE+vx9Ur8uFQWBIXTBH3jT12yHBB4TJY austin@powers (ED25519)
 ```
-
 
 ## History
 

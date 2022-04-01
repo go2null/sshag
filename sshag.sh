@@ -3,34 +3,31 @@
 # acquired courtesy of
 # http://superuser.com/questions/141044/sharing-the-same-ssh-agent-among-multiple-login-sessions#answer-141241
 
-main() {
-	# If we are not being sourced, but rather running as a subshell,
-	# let people know how to use the output.
-	if [ "${0#*sshag}" != "$0" ]; then
-		sshag_msg='Output should be assigned to the environment variable SSH_AUTH_SOCK.'
-		sshag "$@"
-	fi
+sshag_running_as_command() {
+	[ "${0#*sshag}" != "$0" ]
 }
 
-# calling syntax
-# sshag install [dest_dir] - install
-# sshag update [dest_dir]  - update
-# sshag                    - start/use agent
-# sshag agent-socket       - use specified agent
-# sshag user@host [ssh-options-and-args] - start agent and ssh to user@host
-sshag() {
-	# ssh agent sockets can be attached to an ssh daemon process
-	# or an ssh-agent process.
+# only allow to source once.
+# this simplifies the installation by adding to all the dot profiles and only source once.
+type sshag 2>dev/null | grep 'is a function' \
+	&& ! sshag_running_as_command        \
+	&& return
 
+# USAGE
+# sshag install [DEST_DIR]               - install/update
+# sshag update  [DEST_DIR]               - update
+# sshag                                  - start/use agent
+# sshag AGENT_SOCKET                     - use specified agent
+# sshag USER@HOST [SSH_OPTIONS_AND_ARGS] - start agent and ssh to USER@HOST
+sshag() {
 	unset ssh_args
-	unset agent_found
 	unset agent_socket
 	unset user_hostname
 
 	while [ $# -gt 0 ]; do
 		case "$1" in
-		install) shift; sshag_install "$@"; return $? ;;
-		update)  shift; sshag_update "$@";  return $? ;;
+		install) shift; sshag_install 'install' "$@"; return $? ;;
+		update)  shift; sshag_install 'update'  "$@"; return $? ;;
 		-*) ssh_args="$ssh_args $1" ;;
 		*)
 			if [ -e "$1" ] ; then
@@ -44,81 +41,95 @@ sshag() {
 	done
 
 	sshag_require_ssh
-
-	# Attempt to use socket passed in, or
-	#   find and use the ssh-agent in the current environment
-	if sshag_vet_socket "$agent_socket"; then
-		agent_found=1
-	else
-		# If there is no agent in the environment,
-		# search for possible agents to reuse
-		# before starting a fresh ssh-agent process.
-		for agent_socket in $(sshag_get_sockets) ; do
-			sshag_vet_socket "$agent_socket" && agent_found=1 && break
-		done
-	fi
-
-	# If at this point we still haven't located an agent,
-	# then it's time to start a new one
-	[ -z "$agent_found" ] &&  eval "$(ssh-agent)"
+	sshag_agent_get_socket "$agent_socket" || sshag_agent_new_socket
 
 	if [ -n "$user_hostname" ]; then
-		sshag_do_ssh "$user_hostname" "$ssh_args"
+		sshag_ssh "$user_hostname" "$ssh_args"
 	else
-		# Display the found socket
-		if [ "$sshag_msg" ]; then
-			print_stderr "$sshag_msg"
-			unset sshag_msg
-		fi
-
-		# Display keys currently loaded in the agent
-		print_stderr "Keys:"
-		print_stderr "$(ssh-add -l | sed 's/^/    /')"
-
-		print_line "$SSH_AUTH_SOCK"
+		sshag_running_as_command && sshag_agent_print_notice
+		sshag_agent_print_keys
 	fi
-
-	# Clean up
-	unset agent_found
-	unset agent_socket
-	unset user_hostname
 }
 
 sshag_require_ssh() {
-	if [ ! -x "$(command -v ssh)" ]; then
-		exit_error "'ssh' is not available! Aborting!"
-	elif [ ! -x "$(command -v ssh-add)" ]; then
-		exit_error "'ssh-add' is not available! Aborting!"
-	elif [ ! -x "$(command -v ssh-agent)" ]; then
-		exit_error "'ssh-agent' is not available! Aborting!"
-	fi
+	for util in ssh ssh-add ssh-agent; do
+		require_command "$util"
+	done
 }
 
-sshag_vet_socket() {
-	[ "$1" ] && export SSH_AUTH_SOCK="$1"
+# == Get/Start SSH-AGENT ==
 
-	if [ -z "$SSH_AUTH_SOCK" ]; then
-		return 1
-	elif [ -S "$SSH_AUTH_SOCK" ]; then
+# $1 - Agent Socket
+sshag_agent_get_socket() {
+	unset found_agent
+
+	# Attempt to use socket passed in
+	sshag_agent_vet_socket "$1" && return
+
+	# Attempt to use the ssh-agent in the current environment
+	sshag_agent_vet_socket "$SSH_AUTH_SOCK" && return
+
+	# If there is no agent in the environment,
+	# search for possible agents to reuse
+	# before starting a fresh ssh-agent process.
+	# ssh agent sockets can be attached to an ssh daemon process
+	# or an ssh-agent process.
+	for agent_socket in $(sshag_agent_find_sockets) ; do
+		sshag_agent_vet_socket "$agent_socket" && return
+	done
+
+	return 1
+}
+
+# $1 - Agent Socket
+sshag_agent_vet_socket() {
+	[ -z "$1" ] && return 1
+
+	if [ -S "$1" ]; then
+		export SSH_AUTH_SOCK="$1"
 		ssh-add -l >/dev/null 2>&1
 		if [ $? -eq 2 ]; then
 			rm -f "$SSH_AUTH_SOCK"
-			print_warning "Socket '$SSH_AUTH_SOCK' is dead!  Deleting!"
+			print_warning "Socket '$SSH_AUTH_SOCK' is dead! Deleted!"
 		fi
 	else
 		print_warning "'$SSH_AUTH_SOCK' is not a socket!"
 	fi
 }
 
-sshag_get_sockets() {
+sshag_agent_find_sockets() {
 	# OpenSSH only uses these two dirs
 	for dir in '/tmp' "$TMPDIR"; do
 		find "$dir" -user $(id -u) -type s -path '*/ssh-*/agent.*' 2>/dev/null
 	done | sort -u
 }
 
+sshag_agent_new_socket() {
+	eval "$(ssh-agent)"
+}
+
+sshag_agent_print_notice() {
+	print_info "$(cat <<- NOTICE
+		Do the following to add the ssh-agent to your current session
+		    export SSH_AGENT_SOCK="\$(sh '$0')"
+		Or, simply source the file
+		    source '$0'
+		If it is already sourced, but your agent is dead, then just
+		    sshag
+	NOTICE
+	)"
+}
+
+# Display keys currently loaded in the agent
+sshag_agent_print_keys() {
+	print_info "Keys:"
+	print_info "$(ssh-add -l | sed 's/^/    /')"
+}
+
+# == SSH wrapper ==
+
 # Load first key for specified user@hostname and start `ssh`.
-sshag_do_ssh() (
+sshag_ssh() (
 	# This is needed for OpenSSH before v7.2 which added support AddKeysToAgent
 	# Or if the local ssh client support AddKeysToAgent,
 	# but it is not set in the ~/.ssh/config
@@ -134,95 +145,98 @@ sshag_do_ssh() (
 	shift
 	ssh_args="$@"
 
-	if sshag_config_has_add_keys; then
+	if sshag_ssh_config_has_add_keys; then
 		# Honor AddKeysToAgent settings
 		: # do nothing
 	elif ssh -o AddKeysToAgent 2>&1 | grep 'missing argument' >/dev/null; then
 		# If this ssh supports AddKeyToAgent, then use it
 		ssh_args="$ssh_args -o AddKeysToAgent=yes"
 	else
-		# This is needed for OpenSSH pre v7.2, when AddKeysToAgent was added
-		sshag_add_key_to_agent "$1"
+		# This is needed for OpenSSH pre v7.2, before AddKeysToAgent was added
+		sshag_ssh_add_key_to_agent "$1"
 	fi
 
 	ssh $ssh_args "$user_host"
 )
 
-# Checks is ~/.ssh/config has
-sshag_config_has_add_keys() {
+# Checks if ~/.ssh/config has AddKeysToAgent
+sshag_ssh_config_has_add_keys() {
 	grep '^[[:blank:]]*AddKeysToAgent' \
 		"$HOME/.ssh/config" "/etc/ssh/ssh_config" >/dev/null 2>&1
 	return $?
 }
 
-sshag_add_key_to_agent() {
-	# This is needed for OpenSSH before v7.2 which added support AddKeysToAgent
-	# Or if the local ssh client support AddKeysToAgent,
-	# but it is not set in the ~/.ssh/config
+# This is needed for OpenSSH before v7.2 which added support AddKeysToAgent
+# Or if the local ssh client support AddKeysToAgent,
+# but it is not set in the ~/.ssh/config
+sshag_ssh_add_key_to_agent() {
+	sshag_ssh_is_identity_loaded "$1" && return
 
-	# check if identity is already loaded
-	if ! sshag_is_identity_loaded "$1"; then
-
-		# load identity if one is defined for the user@hostname.
-		sshag_get_identity "$1"
-		if [ -n "$sshag_identity" ] && ! ssh-add "$sshag_identity"; then
-			print_error "Unable to load identity '$sshag_identity'!"
-		fi
+	# load identity if one is defined for the user@hostname.
+	sshag_identity="$(sshag_ssh_get_identity "$1")"
+	if [ -n "$sshag_identity" ] && ! ssh-add "$sshag_identity"; then
+		print_error "Unable to load identity '$sshag_identity'!"
 	fi
-
-	# Clean up
-	unset sshag_identity
 }
 
-sshag_is_identity_loaded() {
+sshag_ssh_is_identity_loaded() {
 	echo 'exit' | ssh -o BatchMode=yes -- $1 2>/dev/null
-	#[ $? -eq 0 ] && return 0 || return 1
 	return $?
 }
 
-# SETS identity
-sshag_get_identity() {
-	#identity="$(ssh -G $1 | awk ' /identityfile/ { print $2 } ' | head -n 1)"
-	sshag_identity="$(ssh -v -o BatchMode=yes "$1" 2>&1 \
+sshag_ssh_get_identity() {
+	sshag_identity="$(ssh -v -o BatchMode=yes "$1" 2>&1    \
 			| awk ' /identity file/ { print $4 } ' \
 			| head -n 1)"
 
-	if [ -n "$sshag_identity" ]; then
-		# leading tilde causes `ssh-add` to fail.
-		sshag_identity="$(expand_tilde "$sshag_identity")"
-	fi
+	[ -n "$sshag_identity" ]                                  \
+		&& sshag_identity="$(realpath -m "$sshag_identity")" \
+		&& printf '%s' "$sshag_identify"
 }
 
-# INSTALL
+# == INSTALL ==
 
 sshag_install() (
+	require_command 'git'
+	dir="$(sshag_install_path "$2")"
+
+	if [ "$1" = 'update' ] || [ -d "$dir/sshag" ]; then
+	       sshag_update "$dir"
+	       return $?
+	 fi
+
+	print_info "Installing 'sshag' to '$dir'."
+  	__SSHAG_CONFIG=". '$dir/sshag/sshag.sh'; sshag >/dev/null"
+	sshag_install_download "$dir"
+	sshag_install_profiles "$dir"
+	sshag_install_manual
+)
+
+sshag_install_path() {
 	unset dir
-
-	custom_dir="$1"
-	user_dir="${XDG_DATA_HOME:=$HOME/.local/share}/../lib"
 	system_dir='/usr/local/lib'
+	user_dir="$HOME/.local/lib"
 
-	[ -n "$custom_dir" ]                  && mkdir -p "$custom_dir" && dir="$custom_dir"
-	[ -z "$dir" ] && [ "$USER" = 'root' ] && mkdir -p "$system_dir" && dir="$system_dir"
-	[ -z "$dir" ]                         && mkdir -p "$user_dir"   && dir="$user_dir"
-
-	if [ -z "$dir" ]; then
-		print_error "Cannot create 'sshag' repo at either"
-		[ -n "$custom_dir" ] &&  print_error " '$custom_dir', or"
-		print_error " '$user_dir', or"
-		exit_error " '$system_dir'."
-	else
-		print_line "Installing 'sshag' to '$dir'."
+	if [ -n "$1" ]; then
+		dir="$(realpath -m "$1" 2>/dev/null)"
+		[ -z "$dir" ] && print_fatal "Invalid directory '$1'"
 	fi
 
-	# download
-	cd "$dir"
-	dir="$PWD" # get rid off `/../`  in `user_dir`
-  git clone 'https://github.com/go2null/sshag.git'
-	print_line "'sshag' installed to '$dir'"
+	[ -z "$dir" ] && [ "$USER" = 'root' ] && dir="$system_dir"
+	[ -z "$dir" ]                         && dir="$user_dir"
 
-	# add to shell startup files
-  CONFIG=". $dir/sshag/sshag.sh; sshag >/dev/null"
+	[ -d "$dir" ] || mkdir -p "$dir" || print_fatal "Cannot create directory '$dir'"
+	printf '%s' "$dir"
+}
+
+sshag_install_download() {
+	cd "$1"
+  	git clone 'https://github.com/go2null/sshag.git'
+	print_info "'sshag' installed to '$1'"
+}
+
+# add to shell startup files
+sshag_install_profiles() {
 	if [ "$USER" = 'root' ]; then
 		if touch '/etc/profile.d/sshag.sh' 2>/dev/null; then
 			sshag_install_profile '/etc/profile.d/sshag.sh'
@@ -230,88 +244,55 @@ sshag_install() (
 			sshag_install_profile '/etc/profile'
 		fi
 	else
-		sshag_install_profile "$HOME/.bash_profile" \
-			|| sshag_install_profile "$HOME/.profile"
+		sshag_install_profile "$HOME/.profile"
+		sshag_install_profile "$HOME/.bash_profile"
+		sshag_install_profile "$HOME/.bashrc"
+		sshag_install_profile "$HOME/.zshrc"
 	fi
-	sshag_install_profile "$HOME/.bashrc"
-	sshag_install_profile "$HOME/.zshrc"
-
-	# allow user to do it manually as well
-	print_line "Add the following to any additional shell startup files:"
-	print_line "    $CONFIG"
-)
+}
 
 sshag_install_profile() {
-	if [ -e "$1" ]; then
-		print_line "$CONFIG" >> "$1"
-		print_line "'sshag' added to startup file '$1'"
-		return
-	else
-		return 1
+	[ -w "$1" ] || return 1
+
+
+	if grep "^[ \t]*$__SSHAG_CONFIG" "$1" >/dev/null; then
+		print_info "'sshag' already in startup file '$1'"
+	       	return
 	fi
+
+	print_line "$__SSHAG_CONFIG" >> "$1"
+	print_info "'sshag' added to startup file '$1'"
+}
+	
+sshag_install_manual() {
+	print_info "Add the following to any additional shell startup files:"
+	print_info "    $__SSHAG_CONFIG"
 }
 
 sshag_update() (
-	unset dir
-	unset SUDO
+	[ -d "$1/sshag" ] && dir="$1/sshag" || dir="$1"
 
-	custom_dir="$1"
-	user_dir="${XDG_DATA_HOME:=$HOME/.local/share}/../lib/sshag"
-	system_dir='/usr/local/lib/sshag'
-
-	[ -n "$custom_dir" ] && [ -d "$custom_dir" ]       && dir="$custom_dir"
-	[ -n "$custom_dir" ] && [ -d "$custom_dir/sshag" ] && dir="$custom_dir/sshag"
-	[ -z "$dir" ]        && [ -d "$user_dir" ]         && dir="$user_dir"
-	[ -z "$dir" ]        && [ -d "$system_dir" ]       && dir="$system_dir"
-
-	if [ -z "$dir" ]; then
-		print_error "Cannot find 'sshag' repo at either"
-		[ -n "$custom_dir" ] &&  print_error " '$custom_dir', or"
-		print_error " '$user_dir', or"
-		exit_error " '$system_dir'."
-	else
-		print_line "Updating 'sshag' at '$dir'."
-	fi
-
-	[ "$dir" = "$system_dir" ] && SUDO='sudo'
-
+	print_info "Updating 'sshag' at '$dir'."
 	cd "$dir"
-	$SUDO sh -c 'git pull'
+	git pull
 )
 
-# HELPERS
+# == HELPERS ==
 
-# Call in a subshell
-expand_tilde() {
-	expand_tilde_="${1#\~/}"
-	[ "$1" != "$expand_tilde_" ] && expand_tilde_="$HOME/$expand_tilde_"
-	printf "$expand_tilde_"
-	unset expand_tilde_
-}
+print_error()   { print_stderr "ERROR:   $@"; return 1; }
+print_fatal()   { print_stderr "FATAL:   $@"; exit   1; }
+print_info()    { print_stderr "INFO:    $@"; return 1; }
+print_warning() { print_stderr "WARNING: $@"; return 1; }
 
-exit_error() {
-	print_error "$@"
-	exit 1
-}
-
-print_error() {
-	print_stderr "ERROR: $@"
-	return 1
-}
-
-print_line() {
-	printf "$@\n"
-}
-
-# Do not send messages to 'stdout'
+print_stderr()  { print_line "$@" >&2; } # Do not send messages to 'stdout'
 # - it is reserved for outputting $SSH_AUTH_SOCH when invoked in a subshell
-print_stderr() {
-	print_line "$@" >&2
+
+print_line()    { printf "$@\n"; }
+
+require_command() {
+	[ ! -x "$(command -v "$1")" ] && print_fatal "'$1' is not available! aborting!"
 }
 
-print_warning() {
-	print_stderr "WARNING: $@"
-	return 1
-}
+# == HOOK ==
 
-main "$@"
+sshag_running_as_command && sshag "$@"

@@ -5,60 +5,64 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog]
 and this project adheres to [Semantic Versioning].
 
-
+## [Unreleased]
+### Fixed
+* _go2null_: Fix bug #2 path to LICENSE.
+### Changed
+* _go2null_: install now defaults to _system_ only if running as `root`.
+* _go2null_: install now defaults to `~/.local/lib` per `systemd` standard.
+ 
 ## [1.3.1] - 2018-02-19
 ### Added
-- *go2null*: Added support for [pearl] shell package manager.
-
+* _go2null_: Added support for [pearl] shell package manager.
 ### Changed
-- *go2null*: Replaced regular `git` tags with annotated tags with changelog.
-- *go2null*: Moved **History** section from `README.markdown` to `CHANGELOG.md`.
-- *go2null*: Renamed `README.markdown` to `README.md`.
-
+* _go2null_: Replaced regular `git` tags with annotated tags with changelog.
+* _go2null_: Moved __History__ section from `README.markdown` to `CHANGELOG.md`.
+* _go2null_: Renamed `README.markdown` to `README.md`.
 
 ## [1.3.0] - 2018-01-17
 ### Added
-- *go2null*: Allow passing arguments/options to `ssh`.
-- *go2null*: New `install` and `update` functions.
-
+* _go2null_: Allow passing arguments/options to `ssh`.
+* _go2null_: New `install` and `update` functions.
 
 ## [1.2.1] - 2017-10-07
 ## Added
-- *go2null*: Check if `ssh` supports `AddKeysToAgent` flag.
-
+* _go2null_: Check if `ssh` supports `AddKeysToAgent` flag.
 ## Changed
-- *go2null*: Fixed detection of identity files.
-- *go2null*: Fixed grep error when config file not found.
-
+* _go2null_: Fixed detection of identity files.
+* _go2null_: Fixed grep error when config file not found.
 
 ## [1.2.0] - 2016-08-25
 ### Added
-- *go2null*: Search `$TMPDIR` for agents as well, per OpenSSH man page.
-- *go2null*: Accept socket passed in.
-- *go2null*: Can now use `sshag user@domain` instead of `ssh user@domain`.
-
+* _go2null_: Search `$TMPDIR` for agents as well, per OpenSSH man page.
+* _go2null_: Accept socket passed in.
+* _go2null_: Can now use `sshag user@domain` instead of `ssh user@domain`.
 ### Changed
-- *go2null*: Make script POSIX compliant.
-
+* _go2null_: Make script POSIX compliant.
 
 ## [1.1.0] - 2011-02-20
 ### Added
-- *intuited*: Made it convenient to run the script in a subshell.
-
+* _intuited_: Made it convenient to run the script in a subshell.
 
 ## [1.0.0] - 2010-07-26
 ### Added
-- *intuited*: Add readme and license documents.
-
+* _intuited_: Add readme and license documents.
 ### Changed
-- *intuited*: Renamed from `sagent` to `sshag`.
-
+* _intuited_: Renamed from `sagent` to `sshag`.
 
 ## [0.0.0] - 2010-05-14
 ### Added
-- *Zed*: http://superuser.com/a/141241
+* _Zed_: http://superuser.com/a/141241
 
 
-[Keep a Changelog]: http://keepachangelog.com
+[Keep a Changelog]:    http://keepachangelog.com
 [Semantic Versioning]: http://semver.org
-[pearl]: https://github.com/pearl-core/pearl#installation
+[pearl]:               https://github.com/pearl-core/pearl#installation
+
+[Unreleased]: https://github.com/go2null/sshag/compare/1.3.1...HEAD
+[1.3.1]:      https://github.com/go2null/sshag/compare/1.3.0....1.3.1
+[1.3.0]:      https://github.com/go2null/sshag/compare/1.2.1....1.3.0
+[1.2.1]:      https://github.com/go2null/sshag/compare/1.2.0....1.2.1
+[1.2.0]:      https://github.com/go2null/sshag/compare/1.1.0....1.2.0
+[1.1.0]:      https://github.com/go2null/sshag/compare/0.0.0....1.1.0
+[0.0.0]:      https://github.com/go2null/sshag/releases/tag/0.0.0
