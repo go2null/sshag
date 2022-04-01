@@ -9,7 +9,7 @@ sshag_running_as_command() {
 
 # only allow to source once.
 # this simplifies the installation by adding to all the dot profiles and only source once.
-type sshag 2>dev/null | grep 'is a function' \
+type sshag 2>/dev/null | grep 'is a function' \
 	&& ! sshag_running_as_command        \
 	&& return
 
