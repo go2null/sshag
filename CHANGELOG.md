@@ -6,11 +6,15 @@ The format is based on [Keep a Changelog]
 and this project adheres to [Semantic Versioning].
 
 ## [Unreleased]
+
+## [2.0.0] - 2022-04-01
 ### Fixed
 * _go2null_: Fix bug #2 path to LICENSE.
+### Added
+* _go2null_: Ability to uninstall.
 ### Changed
-* _go2null_: install now defaults to _system_ only if running as `root`.
-* _go2null_: install now defaults to `~/.local/lib` per `systemd` standard.
+* _go2null_: __BREAKING__: install now defaults to _system_ only if running as `root`.
+* _go2null_: __BREAKING__: install now defaults to `~/.local/lib` per `systemd` standard.
  
 ## [1.3.1] - 2018-02-19
 ### Added
@@ -48,7 +52,7 @@ and this project adheres to [Semantic Versioning].
 ### Added
 * _intuited_: Add readme and license documents.
 ### Changed
-* _intuited_: Renamed from `sagent` to `sshag`.
+* _intuited_: __BREAKING__: Renamed from `sagent` to `sshag`.
 
 ## [0.0.0] - 2010-05-14
 ### Added
@@ -59,10 +63,12 @@ and this project adheres to [Semantic Versioning].
 [Semantic Versioning]: http://semver.org
 [pearl]:               https://github.com/pearl-core/pearl#installation
 
-[Unreleased]: https://github.com/go2null/sshag/compare/1.3.1...HEAD
+[Unreleased]: https://github.com/go2null/sshag/compare/2.0.0...HEAD
+[2.0.0]:      https://github.com/go2null/sshag/compare/1.3.0....2.0.0
 [1.3.1]:      https://github.com/go2null/sshag/compare/1.3.0....1.3.1
 [1.3.0]:      https://github.com/go2null/sshag/compare/1.2.1....1.3.0
 [1.2.1]:      https://github.com/go2null/sshag/compare/1.2.0....1.2.1
 [1.2.0]:      https://github.com/go2null/sshag/compare/1.1.0....1.2.0
-[1.1.0]:      https://github.com/go2null/sshag/compare/0.0.0....1.1.0
+[1.1.0]:      https://github.com/go2null/sshag/compare/1.0.0....1.1.0
+[1.0.0]:      https://github.com/go2null/sshag/compare/0.0.0....1.0.0
 [0.0.0]:      https://github.com/go2null/sshag/releases/tag/0.0.0

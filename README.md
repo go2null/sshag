@@ -50,6 +50,9 @@ sshag install
 
 # update
 sshag update
+
+# uninstall/remove
+sshag remove
 ```
 
 ## Usage

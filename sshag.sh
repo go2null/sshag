@@ -8,6 +8,8 @@ sshag_running_as_command() {
 	[ "${0#*sshag}" != "$0" ]
 }
 
+printf '%s\n' "$0" >&2
+
 # only allow to source once.
 # this simplifies the installation by adding to all the dot profiles and only source once.
 type sshag 2>/dev/null | grep 'is a function' \
@@ -15,8 +17,9 @@ type sshag 2>/dev/null | grep 'is a function' \
 	&& return
 
 # USAGE
-# sshag install [TARGET_DIR]             - install/update
-# sshag update  [TARGET_DIR]             - update
+# sshag install   [TARGET_DIR]           - install/update
+# sshag update    [TARGET_DIR]           - update
+# sshag uninstall [TARGET_DIR]           - uninstall
 # sshag                                  - start/use agent
 # sshag AGENT_SOCKET                     - use specified agent
 # sshag USER@HOST [SSH_OPTIONS_AND_ARGS] - start agent and ssh to USER@HOST
@@ -26,8 +29,10 @@ sshag() {
 
 	while [ $# -gt 0 ]; do
 		case "$1" in
-		install) shift; sshag_install 'install' "$@"; return $? ;;
-		update)  shift; sshag_install 'update'  "$@"; return $? ;;
+		install)   shift; sshag_install 'install' "$@"; return $? ;;
+		update)    shift; sshag_install 'update'  "$@"; return $? ;;
+		uninstall) shift; sshag_install 'remove'  "$@"; return $? ;;
+		remove)    shift; sshag_install 'remove'  "$@"; return $? ;;
 		-*) break ;; # ssh options
 		*)
 			if [ -e "$1" ] ; then
@@ -202,20 +207,34 @@ sshag_ssh_get_identity() {
 
 # == INSTALL ==
 
-# $1 - required. action - install or update
+# $1 - required. action - install, update, or remove
 # $2 - optional. install directory
 sshag_install() (
 	require_command 'git'
+
 	dir="$(sshag_install_path "$2")"
+	[ "$dir" != "${dir%/sshag}" ] && dir="${dir%/sshag}" 
 
-	if [ "$1" = 'update' ] || [ -d "$dir/sshag" ]; then
-	       sshag_update "$dir"
-	       return $?
-	 fi
+	if [ -d "$dir/sshag" ]; then
+		case "$1" in
+		install|update)
+		       sshag_update "$dir"
+		       return $?
+		       ;;
+	       	remove)
+		       sshag_remove "$dir"
+		       return $?
+		       ;;
+       		esac
+	fi
 
-	print_info "Installing 'sshag' to '$dir'."
+	[ "$1" = 'remove' ] \
+		&& print_fatal "Cannot detect where 'sshag' is installed"
+
+	print_info "Installing to $dir."
 	sshag_install_download "$dir"
 
+	print_info "Adding to startup files"
   	sshag_config=". '$dir/sshag/sshag.sh'; sshag >/dev/null"
 	sshag_install_profiles "$sshag_config"
 	sshag_install_manual   "$sshag_config"
@@ -229,21 +248,22 @@ sshag_install_path() {
 
 	if [ -n "$1" ]; then
 		dir="$(realpath -m "$1" 2>/dev/null)"
-		[ -z "$dir" ] && print_fatal "Invalid directory '$1'"
+		[ -z "$dir" ] && print_fatal "  Invalid directory $1."
 	fi
 
 	[ -z "$dir" ] && [ "$USER" = 'root' ] && dir="$system_dir"
 	[ -z "$dir" ]                         && dir="$user_dir"
 
-	[ -d "$dir" ] || mkdir -p "$dir" || print_fatal "Cannot create directory '$dir'"
+	[ -d "$dir" ] || mkdir -p "$dir" || print_fatal "  Cannot create directory $dir."
 	printf '%s' "$dir"
 }
 
 # $1 - required. install directory
 sshag_install_download() {
-	cd "$1" || print_fatal "Cannot accees '$1'"
-  	git clone 'https://github.com/go2null/sshag.git'
-	print_info "'sshag' installed to '$1'"
+	cd "$1" || print_fatal "  Cannot accees $1."
+
+	git clone 'https://github.com/go2null/sshag.git' \
+		|| print_fatal "  'git clone' failed with above error."
 }
 
 # add to shell startup files
@@ -270,28 +290,64 @@ sshag_install_profile() {
 
 
 	if grep "^[ \t]*$1" "$2" >/dev/null; then
-		print_info "'sshag' already in startup file '$2'"
+		print_info "  SKIPPED $2, already added."
 	       	return
 	fi
 
 	print_line "$1" >> "$2"
-	print_info "'sshag' added to startup file '$2'"
+	print_info "  ADDED to '$2'"
 }
 	
 # $1 - required. config line
 sshag_install_manual() {
-	print_info "Add the following to any additional shell startup files:"
-	print_info "    $1"
+	print_info "Add the following to any additional shell startup files"
+	print_info "  $1"
 }
 
 # $1 - required. install directory
-sshag_update() (
-	[ -d "$1/sshag" ] && dir="$1/sshag" || dir="$1"
-
-	print_info "Updating 'sshag' at '$dir'."
-	cd "$dir" || print_fatal "Cannot accees '$dir'"
+sshag_update() {
+	print_info "Updating 'sshag' at $1."
+	cd "$1/sshag" || print_fatal "  Cannot accees $1/sshag."
 	git pull
-)
+}
+
+# $1 - required. install directory
+sshag_remove() {
+	print_info "Removing 'sshag' at $1."
+	rm -rf "$1/sshag"
+
+	print_info "Removing from startup files"
+	sshag_remove_profiles
+}
+
+sshag_remove_profiles() {
+	file='/etc/profile.d/sshag.sh'
+	[ -w "$file" ] && print_info "  REMOVED $file." && rm "$file"
+
+	files="/etc/profile
+$HOME/.profile
+$HOME/.bash_profile
+$HOME/.bashrc
+$HOME/.zshrc"
+
+	while IFS='' read -r file; do 
+		sshag_remove_profile "$file"
+	done <<- EOF
+	$files
+	EOF
+}
+
+# $1 - required. config file
+sshag_remove_profile() {
+	[ -e "$1" ]                           || return
+	grep 'sshag.sh' "$1" 1>/dev/null 2>&1 || return
+
+	print_info "  $1"
+	[ ! -w "$1" ] && print_warning "    SKIPPED, cannot edit file" && return
+
+	sed -i.bak '/.*sshag.sh.*/ d' "$1" \
+		|| print_warning "    FAILED to remove"
+}
 
 # == HELPERS ==
 
