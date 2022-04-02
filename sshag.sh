@@ -4,17 +4,17 @@
 #   http://superuser.com/questions/141044/sharing-the-same-ssh-agent-among-multiple-login-sessions#answer-141241
 # Project at: https://github.com/go2null/sshag
 
+sshag_function_is_defined() {
+	type sshag >/dev/null 2>&1
+}
+
 sshag_running_as_command() {
 	[ "${0#*sshag}" != "$0" ]
 }
 
-printf '%s\n' "$0" >&2
-
-# only allow to source once.
+# only allow to source file once.
 # this simplifies the installation by adding to all the dot profiles and only source once.
-type sshag 2>/dev/null | grep 'is a function' \
-	&& ! sshag_running_as_command        \
-	&& return
+sshag_function_is_defined && ! sshag_running_as_command && return 1
 
 # USAGE
 # sshag install   [TARGET_DIR]           - install/update
@@ -113,6 +113,7 @@ sshag_agent_new_socket() {
 
 sshag_agent_print_notice() {
 	print_info "$(cat <<- NOTICE
+
 		Do the following to add the ssh-agent to your current session
 		    export SSH_AGENT_SOCK="\$(sh '$0')"
 		Or, simply source the file
@@ -235,7 +236,7 @@ sshag_install() (
 	sshag_install_download "$dir"
 
 	print_info "Adding to startup files"
-  	sshag_config=". '$dir/sshag/sshag.sh'; sshag >/dev/null"
+  	sshag_config=". '$dir/sshag/sshag.sh' && sshag >/dev/null"
 	sshag_install_profiles "$sshag_config"
 	sshag_install_manual   "$sshag_config"
 )
@@ -351,15 +352,16 @@ sshag_remove_profile() {
 
 # == HELPERS ==
 
+print_line()    { printf '%s\n' "$*"; }
+
+print_stderr()  { print_line "$@" >&2; } 
+# Do not send messages to 'stdout'
+# - it is reserved for outputting $SSH_AUTH_SOCH when invoked in a subshell
+
 print_error()   { print_stderr "ERROR:   $*"; return 1; }
 print_fatal()   { print_stderr "FATAL:   $*"; exit   1; }
 print_info()    { print_stderr "INFO:    $*"; return 1; }
 print_warning() { print_stderr "WARNING: $*"; return 1; }
-
-print_stderr()  { print_line "$@" >&2; } # Do not send messages to 'stdout'
-# - it is reserved for outputting $SSH_AUTH_SOCH when invoked in a subshell
-
-print_line()    { printf '%s\n' "$*"; }
 
 require_command() {
 	[ ! -x "$(command -v "$1")" ] && print_fatal "'$1' is not available! aborting!"
@@ -367,4 +369,4 @@ require_command() {
 
 # == HOOK ==
 
-sshag_running_as_command && sshag "$@"
+sshag "$@"
