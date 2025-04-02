@@ -258,14 +258,34 @@ sshag_install_path() {
 	else
 		if [ "$USER" = 'root' ]; then
 			dir="${XDG_DATA_DIRS%%:*}"                     # use first entry
-			dir="${dir:-/usr/local/share}/lib"             # default value
+			dir="${dir:-/usr/local/share}/lib"             # default XDG value
+
+			sshag_install_migrate '/usr/local/lib' "$dir"          # v1.3.0 path
 		else
-			dir="${XDG_DATA_HOME:-$HOME/.local/share}/lib" # prefer XDG
+			: "${XDG_DATA_HOME:=$HOME/.local/share}"       # set XDG
+
+			dir="$XDG_DATA_HOME/lib"
+
+			sshag_install_migrate "$XDG_DATA_HOME/../lib" "$dir"   # v1.3.0 path
+			sshag_install_migrate "$HOME/.local/lib"      "$dir"   # v2.0.0 path
 		fi
 	fi
 
 	[ -d "$dir" ] || mkdir -p "$dir" || print_fatal "  Cannot create directory $dir."
 	printf '%s' "$dir"
+}
+
+# $1 - from path
+# $2 - to path
+sshag_install_migrate() {
+	[ -d "$1/sshag" ] || return 0
+
+	print_info '  Migrating previous installation'
+	print_info "    from $1/sshag"
+	print_info "    to   $2"
+
+	mkdir -p "$2"
+	mv "$1/sshag" "$2/"
 }
 
 # $1 - required. install directory
