@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog]
 and this project adheres to [Semantic Versioning].
 
 ## [Unreleased]
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## [3.0.0] - 2025-04-03
+### Added
+* _go2null_: ✨ runs ssh-add automatically when shell starts
+* _go2null_: ✨ migrate existing installs to the new location
+### Changed
+* _go2null_: __BREAKING__: 💥 install to XDG_DATA_DIR/lib Directory
+### Fixed
+* _go2null_: 🐛 fix detecting when sourced in ZSH
 
 ## [2.0.0] - 2022-04-01
 ### Fixed
@@ -15,7 +30,7 @@ and this project adheres to [Semantic Versioning].
 ### Changed
 * _go2null_: __BREAKING__: install now defaults to _system_ only if running as `root`.
 * _go2null_: __BREAKING__: install now defaults to `~/.local/lib` per `systemd` standard.
- 
+
 ## [1.3.1] - 2018-02-19
 ### Added
 * _go2null_: Added support for [pearl] shell package manager.
@@ -63,12 +78,13 @@ and this project adheres to [Semantic Versioning].
 [Semantic Versioning]: http://semver.org
 [pearl]:               https://github.com/pearl-core/pearl#installation
 
-[Unreleased]: https://github.com/go2null/sshag/compare/2.0.0...HEAD
-[2.0.0]:      https://github.com/go2null/sshag/compare/1.3.0....2.0.0
-[1.3.1]:      https://github.com/go2null/sshag/compare/1.3.0....1.3.1
-[1.3.0]:      https://github.com/go2null/sshag/compare/1.2.1....1.3.0
-[1.2.1]:      https://github.com/go2null/sshag/compare/1.2.0....1.2.1
-[1.2.0]:      https://github.com/go2null/sshag/compare/1.1.0....1.2.0
-[1.1.0]:      https://github.com/go2null/sshag/compare/1.0.0....1.1.0
-[1.0.0]:      https://github.com/go2null/sshag/compare/0.0.0....1.0.0
+[Unreleased]: https://github.com/go2null/sshag/compare/3.0.0..HEAD
+[3.0.0]:      https://github.com/go2null/sshag/compare/2.0.0...3.0.0
+[2.0.0]:      https://github.com/go2null/sshag/compare/1.3.0...2.0.0
+[1.3.1]:      https://github.com/go2null/sshag/compare/1.3.0...1.3.1
+[1.3.0]:      https://github.com/go2null/sshag/compare/1.2.1...1.3.0
+[1.2.1]:      https://github.com/go2null/sshag/compare/1.2.0...1.2.1
+[1.2.0]:      https://github.com/go2null/sshag/compare/1.1.0...1.2.0
+[1.1.0]:      https://github.com/go2null/sshag/compare/1.0.0...1.1.0
+[1.0.0]:      https://github.com/go2null/sshag/compare/0.0.0...1.0.0
 [0.0.0]:      https://github.com/go2null/sshag/releases/tag/0.0.0
