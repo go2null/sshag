@@ -8,13 +8,20 @@ sshag_function_is_defined() {
 	type sshag >/dev/null 2>&1
 }
 
-sshag_running_as_command() {
-	[ "${0#*sshag}" != "$0" ]
+sshag_is_sourced() {
+	# zsh appends `:file` to `$ZSH_EVAL_CONTEXT` when sourced
+	if [ -n "$ZSH_VERSION" ]; then
+		[ "${ZSH_EVAL_CONTEXT#*:file}" != "$ZSH_EVAL_CONTEXT" ] && return 0
+		return 1
+	fi
+
+	[ "${0#*sshag}" = "$0" ]
 }
 
-# only allow to source file once.
-# this simplifies the installation by adding to all the dot profiles and only source once.
-sshag_function_is_defined && ! sshag_running_as_command && return 1
+# Only allow to source file once.
+# This simplifies the installation by adding to all the dot profiles
+#   and only source once.
+sshag_function_is_defined && sshag_is_sourced && return 1
 
 # USAGE
 # sshag install   [TARGET_DIR]           - install/update
@@ -51,7 +58,7 @@ sshag() {
 	if [ -n "$user_host" ]; then
 		sshag_ssh "$user_host" "$@"
 	else
-		sshag_running_as_command && sshag_agent_print_notice
+		sshag_is_sourced || sshag_agent_print_notice
 		sshag_agent_print_keys
 	fi
 }
