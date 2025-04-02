@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # acquired courtesy of
-#   http://superuser.com/questions/141044/sharing-the-same-ssh-agent-among-multiple-login-sessions#answer-141241
+#	http://superuser.com/questions/141044/sharing-the-same-ssh-agent-among-multiple-login-sessions#answer-141241
 # Project at: https://github.com/go2null/sshag
 
 sshag_function_is_defined() {
@@ -122,11 +122,11 @@ sshag_agent_print_notice() {
 	print_info "$(cat <<- NOTICE
 
 		Do the following to add the ssh-agent to your current session
-		    export SSH_AGENT_SOCK="\$(sh '$0')"
+			export SSH_AGENT_SOCK="\$(sh '$0')"
 		Or, simply source the file
-		    source '$0'
+			source '$0'
 		If it is already sourced, but your agent is dead, then just
-		    sshag
+			sshag
 	NOTICE
 	)"
 }
@@ -153,7 +153,7 @@ sshag_ssh() (
 	# on multiple machines where only some support AddKeysToAgent.
 	# (OpenSSH before v7.2 barfs on params it doesn't know about so can't use
 	# it in a common ssh_config where some machines have pre v7.2 OpenSSH.)
-	
+
 	unset ssh_opts
 
 	user_host="$1"
@@ -204,11 +204,11 @@ sshag_ssh_is_identity_loaded() {
 
 # $1 - required. user@host
 sshag_ssh_get_identity() {
-	sshag_identity="$(ssh -v -o BatchMode=yes "$1" 2>&1    \
-			| awk ' /identity file/ { print $4 } ' \
-			| head -n 1)"
+	sshag_identity="$(ssh -v -o BatchMode=yes "$1" 2>&1 \
+		| awk ' /identity file/ { print $4 } ' \
+		| head -n 1)"
 
-	[ -n "$sshag_identity" ]                                  \
+	[ -n "$sshag_identity" ] \
 		&& sshag_identity="$(realpath -m "$sshag_identity")" \
 		&& printf '%s' "$sshag_identity"
 }
@@ -221,19 +221,19 @@ sshag_install() (
 	require_command 'git'
 
 	dir="$(sshag_install_path "$2")"
-	[ "$dir" != "${dir%/sshag}" ] && dir="${dir%/sshag}" 
+	[ "$dir" != "${dir%/sshag}" ] && dir="${dir%/sshag}"
 
 	if [ -d "$dir/sshag" ]; then
 		case "$1" in
 		install|update)
-		       sshag_update "$dir"
-		       return $?
-		       ;;
-	       	remove)
-		       sshag_remove "$dir"
-		       return $?
-		       ;;
-       		esac
+			sshag_update "$dir"
+			return $?
+			;;
+		remove)
+			sshag_remove "$dir"
+			return $?
+			;;
+		esac
 	fi
 
 	[ "$1" = 'remove' ] \
@@ -243,7 +243,7 @@ sshag_install() (
 	sshag_install_download "$dir"
 
 	print_info "Adding to startup files"
-  	sshag_config=". '$dir/sshag/sshag.sh' && sshag >/dev/null"
+	sshag_config=". '$dir/sshag/sshag.sh' && sshag >/dev/null"
 	sshag_install_profiles "$sshag_config"
 	sshag_install_manual   "$sshag_config"
 )
@@ -299,13 +299,13 @@ sshag_install_profile() {
 
 	if grep "^[ \t]*$1" "$2" >/dev/null; then
 		print_info "  SKIPPED $2, already added."
-	       	return
+		return
 	fi
 
 	print_line "$1" >> "$2"
 	print_info "  ADDED to '$2'"
 }
-	
+
 # $1 - required. config line
 sshag_install_manual() {
 	print_info "Add the following to any additional shell startup files"
@@ -338,7 +338,7 @@ $HOME/.bash_profile
 $HOME/.bashrc
 $HOME/.zshrc"
 
-	while IFS='' read -r file; do 
+	while IFS='' read -r file; do
 		sshag_remove_profile "$file"
 	done <<- EOF
 	$files
@@ -361,7 +361,7 @@ sshag_remove_profile() {
 
 print_line()    { printf '%s\n' "$*"; }
 
-print_stderr()  { print_line "$@" >&2; } 
+print_stderr()  { print_line "$@" >&2; }
 # Do not send messages to 'stdout'
 # - it is reserved for outputting $SSH_AUTH_SOCH when invoked in a subshell
 
