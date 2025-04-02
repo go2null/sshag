@@ -221,7 +221,7 @@ sshag_install() (
 	require_command 'git'
 
 	dir="$(sshag_install_path "$2")"
-	[ "$dir" != "${dir%/sshag}" ] && dir="${dir%/sshag}"
+	dir="${dir%/sshag}" # strip 'sshag' from path, as necessary
 
 	if [ -d "$dir/sshag" ]; then
 		case "$1" in
@@ -248,19 +248,21 @@ sshag_install() (
 	sshag_install_manual   "$sshag_config"
 )
 
-# $1 - optional. install directory
+# $1 - optional. install parent directory
 sshag_install_path() {
 	unset dir
-	system_dir='/usr/local/lib'
-	user_dir="$HOME/.local/lib"
 
 	if [ -n "$1" ]; then
 		dir="$(realpath -m "$1" 2>/dev/null)"
 		[ -z "$dir" ] && print_fatal "  Invalid directory $1."
+	else
+		if [ "$USER" = 'root' ]; then
+			dir="${XDG_DATA_DIRS%%:*}"                     # use first entry
+			dir="${dir:-/usr/local/share}/lib"             # default value
+		else
+			dir="${XDG_DATA_HOME:-$HOME/.local/share}/lib" # prefer XDG
+		fi
 	fi
-
-	[ -z "$dir" ] && [ "$USER" = 'root' ] && dir="$system_dir"
-	[ -z "$dir" ]                         && dir="$user_dir"
 
 	[ -d "$dir" ] || mkdir -p "$dir" || print_fatal "  Cannot create directory $dir."
 	printf '%s' "$dir"

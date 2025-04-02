@@ -69,7 +69,7 @@ Keys:
 
 Invoked
 ```sh
-$ export SSH_AGENT_SOCK=$(sh ~/.local/lib/sshag/sshag.sh)
+$ export SSH_AGENT_SOCK=$(sh ~/.local/share/lib/sshag/sshag.sh)
 Output should be assigned to the environment variable SSH_AUTH_SOCK.
 Keys:
     256 SHA256:2TWr3x/H6eGvE+vx9Ur8uFQWBIXTBH3jT12yHBB4TJY austin@powers (ED25519)
