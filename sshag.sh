@@ -100,10 +100,10 @@ sshag_agent_vet_socket() {
 		ssh-add -l >/dev/null 2>&1
 		if [ $? -eq 2 ]; then
 			rm -f "$SSH_AUTH_SOCK"
-			print_warning "Socket '$SSH_AUTH_SOCK' is dead! Deleted!"
+			print_warning "Socket $SSH_AUTH_SOCK is dead! Deleted!"
 		fi
 	else
-		print_warning "'$SSH_AUTH_SOCK' is not a socket!"
+		print_warning "$SSH_AUTH_SOCK is not a socket!"
 	fi
 }
 
@@ -192,7 +192,7 @@ sshag_ssh_add_key_to_agent() {
 	# load identity if one is defined for the user@hostname.
 	sshag_identity="$(sshag_ssh_get_identity "$1")"
 	if [ -n "$sshag_identity" ] && ! ssh-add "$sshag_identity"; then
-		print_error "Unable to load identity '$sshag_identity'!"
+		print_error "Unable to load identity $sshag_identity!"
 	fi
 }
 
@@ -268,7 +268,7 @@ sshag_install_path() {
 
 # $1 - required. install directory
 sshag_install_download() {
-	cd "$1" || print_fatal "  Cannot accees $1."
+	cd "$1" || print_fatal "  Cannot access $1."
 
 	git clone 'https://github.com/go2null/sshag.git' \
 		|| print_fatal "  'git clone' failed with above error."
@@ -296,14 +296,13 @@ sshag_install_profiles() {
 sshag_install_profile() {
 	[ -w "$2" ] || return 1
 
-
 	if grep "^[ \t]*$1" "$2" >/dev/null; then
 		print_info "  SKIPPED $2, already added."
 		return
 	fi
 
 	print_line "$1" >> "$2"
-	print_info "  ADDED to '$2'"
+	print_info "  ADDED to $2."
 }
 
 # $1 - required. config line
@@ -351,10 +350,10 @@ sshag_remove_profile() {
 	grep 'sshag.sh' "$1" 1>/dev/null 2>&1 || return
 
 	print_info "  $1"
-	[ ! -w "$1" ] && print_warning "    SKIPPED, cannot edit file" && return
+	[ ! -w "$1" ] && print_warning "    SKIPPED, cannot edit file." && return
 
 	sed -i.bak '/.*sshag.sh.*/ d' "$1" \
-		|| print_warning "    FAILED to remove"
+		|| print_warning "    FAILED to remove from file."
 }
 
 # == HELPERS ==
@@ -371,7 +370,7 @@ print_info()    { print_stderr "INFO:    $*"; return 1; }
 print_warning() { print_stderr "WARNING: $*"; return 1; }
 
 require_command() {
-	[ ! -x "$(command -v "$1")" ] && print_fatal "'$1' is not available! aborting!"
+	[ ! -x "$(command -v "$1")" ] && print_fatal "$1 is not available! aborting!"
 }
 
 # == HOOK ==
