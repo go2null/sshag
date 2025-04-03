@@ -132,10 +132,15 @@ sshag_agent_print_notice() {
 	)"
 }
 
-# Display keys currently loaded in the agent
-sshag_agent_print_keys() {
-	print_info "Keys:"
-	print_info "$(ssh-add -l | sed 's/^/    /')"
+# Ensure keys are loaded
+sshag_print_or_add_keys() {
+	if keys="$(ssh-add -l 2>/dev/null)"; then
+		# Display keys currently loaded in the agent
+		print_info "Keys:"
+		print_info "$(printf '\t%s' "$keys")"
+	else
+		ssh-add
+	fi
 }
 
 # == SSH wrapper ==
