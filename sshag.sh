@@ -114,7 +114,7 @@ sshag_agent_find_sockets() {
 	# OpenSSH only uses these two dirs
 	for dir in '/tmp' "$TMPDIR"; do
 		find "$dir" -user "$(id -u)" -type s -path '*/ssh-*/agent.*' 2>/dev/null
-	done | sort -u
+	done
 }
 
 sshag_agent_new_socket() {
