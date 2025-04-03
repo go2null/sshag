@@ -137,7 +137,7 @@ sshag_print_or_add_keys() {
 	if keys="$(ssh-add -l 2>/dev/null)"; then
 		# Display keys currently loaded in the agent
 		print_info "Keys:"
-		print_info "$(printf '\t%s' "$keys")"
+		print_info "$(printf '* %s' "$keys")"
 	else
 		ssh-add
 	fi
