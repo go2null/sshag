@@ -64,7 +64,6 @@ Enter passphrase for key '/home/austin/.ssh/id_ed25519': ^C
 $ sshag alotta@fagina.example.com
 Keys:
     256 SHA256:2TWr3x/H6eGvE+vx9Ur8uFQWBIXTBH3jT12yHBB4TJY austin@powers (ED25519)
-/tmp/ssh-5ock3tt0m3/agent.6969
 ```
 
 Invoked
