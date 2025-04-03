@@ -58,8 +58,11 @@ sshag() {
 	if [ -n "$user_host" ]; then
 		sshag_ssh "$user_host" "$@"
 	else
-		sshag_is_sourced || sshag_agent_print_notice
-		sshag_agent_print_keys
+		if sshag_is_sourced; then
+			sshag_print_or_add_keys
+		else
+			sshag_agent_print_notice
+		fi
 	fi
 }
 
@@ -121,12 +124,10 @@ sshag_agent_new_socket() {
 sshag_agent_print_notice() {
 	print_info "$(cat <<- NOTICE
 
-		Do the following to add the ssh-agent to your current session
-			export SSH_AGENT_SOCK="\$(sh '$0')"
-		Or, simply source the file
-			source '$0'
-		If it is already sourced, but your agent is dead, then just
-			sshag
+	  Do the following to add the ssh-agent to your current session
+	    export SSH_AGENT_SOCK="\$(sh '$0')"
+	  Or, simply source the file
+	    source '$0'
 	NOTICE
 	)"
 }
@@ -243,7 +244,7 @@ sshag_install() (
 	sshag_install_download "$dir"
 
 	print_info "Adding to startup files"
-	sshag_config=". '$dir/sshag/sshag.sh' && sshag >/dev/null"
+	sshag_config=". '$dir/sshag/sshag.sh'"
 	sshag_install_profiles "$sshag_config"
 	sshag_install_manual   "$sshag_config"
 )
