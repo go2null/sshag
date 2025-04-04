@@ -25,14 +25,20 @@ the output will always consist of just the socket location.
 Use the [pearl] package manager.
 ```sh
 # install
-printf '%s=%s\n'                                 \
-	"PEARL_PACKAGES['sshag']"                \
-	"'https://github.com/go2null/sshag.git'" \
-	>> "$HOME/.config/pearl/pearl.conf"
-printf '%s=%s\n' \
-	"PEARL_PACKAGES_DESCR['sshag']" \
-	"'Hook up with an operating or new SSH agent'" \
-	>> "$HOME/.config/pearl/pearl.conf"
+pearl_conf="${XDG_CONFIG_HOME:-$HOME/.config}/pearl/pearl.conf"
+if grep '^}$' >/dev/null 2>&1 "$pearl_conf"; then
+  sed -i.bak 's/^}$//' "$pearl_conf"
+else
+  printf '%s\n' 'PEARL_PACKAGES = {' > "$pearl_conf"
+fi
+printf '"%s": {\n' 'sshag' >>"$pearl_conf"
+printf '"%s": "%s"\n' \
+	'url' 'https://github.com/go2null/sshag.git' \
+	>>"$pearl_conf"
+printf '"%s": "%s"\n' \
+	'description' 'Hook up with an operating or new SSH agent' \
+	>>"$pearl_conf"
+printf '{\n' >>"$pearl_conf"
 pearl install sshag
 
 # update
@@ -44,9 +50,7 @@ pearl update sshag
 ```sh
 # install
 wget https://raw.githubusercontent.com/go2null/sshag/stable/sshag.sh
-. sshag.sh
-rm sshag.sh
-sshag install
+sh sshag.sh install
 
 # update
 sshag update
