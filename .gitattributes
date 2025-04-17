@@ -1,0 +1,11 @@
+# Use LF on checkout across all platforms (Linux, MacOSX, Windows)
+#   as most text files work well with LF on Windows.
+#   Exceptions can be added below.
+*      text eol=lf
+
+# Files that should have their EOL on checkout changed to CRLF.
+
+# Files that should retain their EOL on checkout but may be diff'ed.
+
+# Files that are truly binary - no EOL change on checkout and no diff.
+*.png  binary

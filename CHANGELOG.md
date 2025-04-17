@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning].
 ### Fixed
 ### Security
 
+## [3.0.3] - 2025-04-23
+### Added
+* _go2null_: 🔨 devex: set git EOL and EditorConfig defaults
+
 ## [3.0.2] - 2025-04-04
 ### Changed
 * _go2null_: 💄 removed extra whitespace from keys list
@@ -87,7 +91,8 @@ and this project adheres to [Semantic Versioning].
 [Semantic Versioning]: http://semver.org
 [pearl]:               https://github.com/pearl-core/pearl#installation
 
-[Unreleased]: https://github.com/go2null/sshag/compare/3.0.2...HEAD
+[Unreleased]: https://github.com/go2null/sshag/compare/3.0.3...HEAD
+[3.0.3]:      https://github.com/go2null/sshag/compare/3.0.2...3.0.3
 [3.0.2]:      https://github.com/go2null/sshag/compare/3.0.1...3.0.2
 [3.0.1]:      https://github.com/go2null/sshag/compare/3.0.0...3.0.1
 [3.0.0]:      https://github.com/go2null/sshag/compare/2.0.0...3.0.0
