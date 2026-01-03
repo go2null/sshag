@@ -21,7 +21,7 @@ sshag_is_sourced() {
 # Only allow to source file once.
 # This simplifies the installation by adding to all the dot profiles
 #   and only source once.
-sshag_function_is_defined && sshag_is_sourced && return 1
+sshag_function_is_defined && sshag_is_sourced && return 0
 
 # USAGE
 # sshag install   [TARGET_DIR]           - install/update
