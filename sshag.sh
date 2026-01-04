@@ -5,17 +5,17 @@
 # Project at: https://github.com/go2null/sshag
 
 sshag_function_is_defined() {
-	type sshag >/dev/null 2>&1
+	type sshag >/dev/null 2>&1 && return 0 || return 1
 }
 
 sshag_is_sourced() {
 	# zsh appends `:file` to `$ZSH_EVAL_CONTEXT` when sourced
-	if [ -n "$ZSH_VERSION" ]; then
+	if [ -n "${ZSH_VERSION:-}" ]; then
 		[ "${ZSH_EVAL_CONTEXT#*:file}" != "$ZSH_EVAL_CONTEXT" ] && return 0
 		return 1
 	fi
 
-	[ "${0#*sshag}" = "$0" ]
+	[ "${0#*sshag}" = "$0" ] && return 0 || return 1
 }
 
 # Only allow to source file once.
@@ -31,8 +31,8 @@ sshag_function_is_defined && sshag_is_sourced && return 1
 # sshag AGENT_SOCKET                     - use specified agent
 # sshag USER@HOST [SSH_OPTIONS_AND_ARGS] - start agent and ssh to USER@HOST
 sshag() {
-	unset agent_socket
-	unset user_host
+	agent_socket=''
+	user_host=''
 
 	while [ $# -gt 0 ]; do
 		case "$1" in
@@ -53,7 +53,9 @@ sshag() {
 	done
 
 	sshag_require_ssh
-	sshag_agent_get_socket "$agent_socket" || sshag_agent_new_socket
+	if [ -n "$agent_socket" ]; then
+		sshag_agent_get_socket "$agent_socket" || sshag_agent_new_socket
+	fi
 
 	if [ -n "$user_host" ]; then
 		sshag_ssh "$user_host" "$@"
@@ -77,18 +79,17 @@ sshag_require_ssh() {
 # $1 - optional. Agent Socket
 sshag_agent_get_socket() {
 	# Attempt to use socket passed in
-	sshag_agent_vet_socket "$1" && return
+	sshag_agent_vet_socket "$1" && return 0
 
 	# Attempt to use the ssh-agent in the current environment
-	sshag_agent_vet_socket "$SSH_AUTH_SOCK" && return
+	sshag_agent_vet_socket "$SSH_AUTH_SOCK" && return 0
 
 	# If there is no agent in the environment,
-	# search for possible agents to reuse
-	# before starting a fresh ssh-agent process.
+	#  search for any agent to reuse before starting a fresh ssh-agent process.
 	# ssh agent sockets can be attached to an ssh daemon process
-	# or an ssh-agent process.
+	#  or an ssh-agent process.
 	for agent_socket in $(sshag_agent_find_sockets); do
-		sshag_agent_vet_socket "$agent_socket" && return
+		sshag_agent_vet_socket "$agent_socket" && return 0
 	done
 
 	return 1
@@ -185,12 +186,11 @@ sshag_ssh() (
 sshag_ssh_config_has_add_keys() {
 	grep '^[[:blank:]]*AddKeysToAgent' \
 		"$HOME/.ssh/config" "/etc/ssh/ssh_config" >/dev/null 2>&1
-	return $?
 }
 
 # This is needed for OpenSSH before v7.2 which added support AddKeysToAgent
 # Or if the local ssh client support AddKeysToAgent,
-# but it is not set in the ~/.ssh/config
+#   but it is not set in the ~/.ssh/config
 # $1 - required. user@host
 sshag_ssh_add_key_to_agent() {
 	sshag_ssh_is_identity_loaded "$1" && return
@@ -205,7 +205,6 @@ sshag_ssh_add_key_to_agent() {
 # $1 - required. user@host
 sshag_ssh_is_identity_loaded() {
 	echo 'exit' | ssh -o BatchMode=yes -- "$1" 2>/dev/null
-	return $?
 }
 
 # $1 - required. user@host
@@ -263,17 +262,17 @@ sshag_install_path() {
 		[ -z "$dir" ] && print_fatal "  Invalid directory $1."
 	else
 		if [ "$USER" = 'root' ]; then
-			dir="${XDG_DATA_DIRS%%:*}"                     # use first entry
-			dir="${dir:-/usr/local/share}/lib"             # default XDG value
+			dir="${XDG_DATA_DIRS%%:*}"                           # use first entry
+			dir="${dir:-/usr/local/share}/lib"                   # default XDG value
 
-			sshag_install_migrate '/usr/local/lib' "$dir"          # v1.3.0 path
+			sshag_install_migrate '/usr/local/lib' "$dir"        # v1.3.0 path
 		else
-			: "${XDG_DATA_HOME:=$HOME/.local/share}"       # set XDG
+			: "${XDG_DATA_HOME:=$HOME/.local/share}"             # set XDG
 
 			dir="$XDG_DATA_HOME/lib"
 
-			sshag_install_migrate "$XDG_DATA_HOME/../lib" "$dir"   # v1.3.0 path
-			sshag_install_migrate "$HOME/.local/lib"      "$dir"   # v2.0.0 path
+			sshag_install_migrate "$XDG_DATA_HOME/../lib" "$dir" # v1.3.0 path
+			sshag_install_migrate "$HOME/.local/lib"      "$dir" # v2.0.0 path
 		fi
 	fi
 
@@ -326,7 +325,7 @@ sshag_install_profile() {
 
 	if grep "^[ \t]*$1" "$2" >/dev/null; then
 		print_info "  SKIPPED $2, already added."
-		return
+		return 0
 	fi
 
 	print_line "$1" >> "$2"
@@ -374,11 +373,11 @@ $HOME/.zshrc"
 
 # $1 - required. config file
 sshag_remove_profile() {
-	[ -e "$1" ]                           || return
-	grep 'sshag.sh' "$1" 1>/dev/null 2>&1 || return
+	[ -e "$1" ]                           || return 0
+	grep 'sshag.sh' "$1" 1>/dev/null 2>&1 || return 0
 
 	print_info "  $1"
-	[ ! -w "$1" ] && print_warning "    SKIPPED, cannot edit file." && return
+	[ ! -w "$1" ] && print_warning "    SKIPPED, cannot edit file." && return 0
 
 	sed -i.bak '/.*sshag.sh.*/ d' "$1" \
 		|| print_warning "    FAILED to remove from file."
@@ -392,13 +391,15 @@ print_stderr()  { print_line "$@" >&2; }
 # Do not send messages to 'stdout'
 # - it is reserved for outputting $SSH_AUTH_SOCH when invoked in a subshell
 
-print_error()   { print_stderr "ERROR:   $*"; return 1; }
+print_error()   { print_stderr "ERROR:   $*"; return 0; }
 print_fatal()   { print_stderr "FATAL:   $*"; exit   1; }
-print_info()    { print_stderr "INFO:    $*"; return 1; }
-print_warning() { print_stderr "WARNING: $*"; return 1; }
+print_info()    { print_stderr "INFO:    $*"; return 0; }
+print_warning() { print_stderr "WARNING: $*"; return 0; }
 
 require_command() {
-	[ ! -x "$(command -v "$1")" ] && print_fatal "$1 is not available! aborting!"
+	if [ ! -x "$(command -v "$1")" ]; then
+		print_fatal "$1 is not available! aborting!"
+	fi
 }
 
 # == HOOK ==
