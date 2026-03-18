@@ -11,7 +11,7 @@ sshag_function_is_defined() {
 sshag_is_sourced() {
 	# zsh appends `:file` to `$ZSH_EVAL_CONTEXT` when sourced
 	if [ -n "${ZSH_VERSION:-}" ]; then
-		[ "${ZSH_EVAL_CONTEXT#*:file}" != "$ZSH_EVAL_CONTEXT" ] && return 0
+		[ "${ZSH_EVAL_CONTEXT#*:file}" = "$ZSH_EVAL_CONTEXT" ] || return 0
 		return 1
 	fi
 
@@ -57,14 +57,12 @@ sshag() {
 		sshag_agent_get_socket "$agent_socket" || sshag_agent_new_socket
 	fi
 
-	if [ -n "$user_host" ]; then
+	if sshag_is_sourced; then
+		sshag_print_or_add_keys
+	elif [ -n "$user_host" ]; then
 		sshag_ssh "$user_host" "$@"
 	else
-		if sshag_is_sourced; then
-			sshag_print_or_add_keys
-		else
-			sshag_agent_print_notice
-		fi
+		sshag_agent_print_notice
 	fi
 }
 
