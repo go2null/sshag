@@ -147,7 +147,7 @@ sshag_print_or_add_keys() {
 # Load first key for specified user@hostname and start `ssh`.
 # $1 - required. user@host
 # $@ - optional. ssh options
-sshag_ssh() (
+sshag_ssh() {
 	# This is needed for OpenSSH before v7.2 which added support AddKeysToAgent
 	# Or if the local ssh client support AddKeysToAgent,
 	# but it is not set in the ~/.ssh/config
@@ -178,7 +178,7 @@ sshag_ssh() (
 	# `$ssh_opts` may be unset, quoting it will pass an empty string to `ssh`
 	# shellcheck disable=SC2086,SC2029
 	ssh "$@" $ssh_opts "$user_host"
-)
+}
 
 # Checks if ~/.ssh/config has AddKeysToAgent
 sshag_ssh_config_has_add_keys() {
@@ -220,7 +220,7 @@ sshag_ssh_get_identity() {
 
 # $1 - required. action - install, update, or remove
 # $2 - optional. install directory
-sshag_install() (
+sshag_install() {
 	require_command 'git'
 
 	dir="$(sshag_install_path "$2")"
@@ -249,9 +249,11 @@ sshag_install() (
 	sshag_config=". '$dir/sshag/sshag.sh'"
 	sshag_install_profiles "$sshag_config"
 	sshag_install_manual   "$sshag_config"
-)
+}
 
 # $1 - optional. install parent directory
+# Use LIB directory specified by UAPI (SystemD's FileSystem Hierarchy successor)
+# https://uapi-group.org/specifications/specs/linux_file_system_hierarchy/#localbin
 sshag_install_path() {
 	unset dir
 
@@ -260,17 +262,17 @@ sshag_install_path() {
 		[ -z "$dir" ] && print_fatal "  Invalid directory $1."
 	else
 		if [ "$USER" = 'root' ]; then
-			dir="${XDG_DATA_DIRS%%:*}"                           # use first entry
-			dir="${dir:-/usr/local/share}/lib"                   # default XDG value
+			dir='/usr/local/lib'
 
-			sshag_install_migrate '/usr/local/lib' "$dir"        # v1.3.0 path
+			sshag_install_migrate "${XDG_DATA_DIRS%%:*}/lib" "$dir" # v3.0.0 path
+			sshag_install_migrate '/usr/local/share/lib'     "$dir" # v3.0.0 path
 		else
-			: "${XDG_DATA_HOME:=$HOME/.local/share}"             # set XDG
-
-			dir="$XDG_DATA_HOME/lib"
+			: "${XDG_LIB_HOME:="$(realpath "${XDG_DATA_HOME:-"$HOME/.local/share"}/../lib")"}"
+			dir="$XDG_LIB_HOME"
 
 			sshag_install_migrate "$XDG_DATA_HOME/../lib" "$dir" # v1.3.0 path
 			sshag_install_migrate "$HOME/.local/lib"      "$dir" # v2.0.0 path
+			sshag_install_migrate "$XDG_DATA_HOME/lib"    "$dir" # v3.0.0 path
 		fi
 	fi
 
@@ -283,6 +285,8 @@ sshag_install_path() {
 sshag_install_migrate() {
 	[ -d "$1/sshag" ] || return 0
 
+	[ "$(realpath "$1")" = "$(realpath "$2")" ] && return 0 || :
+
 	print_info '  Migrating previous installation'
 	print_info "    from $1/sshag"
 	print_info "    to   $2"
@@ -292,12 +296,12 @@ sshag_install_migrate() {
 }
 
 # $1 - required. install directory
-sshag_install_download() {
+sshag_install_download() (
 	cd "$1" || print_fatal "  Cannot access $1."
 
 	git clone 'https://github.com/go2null/sshag.git' \
 		|| print_fatal "  'git clone' failed with above error."
-}
+)
 
 # add to shell startup files
 # $1 - required. sshag config line
