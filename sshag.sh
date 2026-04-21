@@ -33,7 +33,7 @@ sshag_function_is_defined && sshag_is_sourced && return 0 || :
 # sshag install   [TARGET_DIR]           - install/update
 # sshag update    [TARGET_DIR]           - update
 # sshag uninstall [TARGET_DIR]           - uninstall
-# sshag                                  - start/use agent
+# sshag                                  - start new/use existing agent
 # sshag AGENT_SOCKET                     - use specified agent
 # sshag USER@HOST [SSH_OPTIONS_AND_ARGS] - start agent and ssh to USER@HOST
 sshag() {
@@ -60,7 +60,7 @@ sshag() {
 
 	sshag_require_ssh
 	if [ -n "$agent_socket" ]; then
-		sshag_agent_get_socket "$agent_socket" || sshag_agent_new_socket
+		sshag_agent_get_socket "$agent_socket"
 	fi
 
 	if sshag_is_sourced; then
@@ -83,35 +83,38 @@ sshag_require_ssh() {
 # $1 - optional. Agent Socket
 sshag_agent_get_socket() {
 	# Attempt to use socket passed in
-	sshag_agent_vet_socket "$1" && return 0
+	sshag_agent_vet_socket "$1"              && return 0 || :
 
 	# Attempt to use the ssh-agent in the current environment
-	sshag_agent_vet_socket "$SSH_AUTH_SOCK" && return 0
+	sshag_agent_vet_socket "$SSH_AUTH_SOCK"  && return 0 || :
 
 	# If there is no agent in the environment,
 	#  search for any agent to reuse before starting a fresh ssh-agent process.
 	# ssh agent sockets can be attached to an ssh daemon process
 	#  or an ssh-agent process.
 	for agent_socket in $(sshag_agent_find_sockets); do
-		sshag_agent_vet_socket "$agent_socket" && return 0
+		sshag_agent_vet_socket "$agent_socket" && return 0 || :
 	done
 
-	return 1
+	# Start a new agent
+	sshag_agent_new_socket
 }
 
 # $1 - optional. Agent Socket
 sshag_agent_vet_socket() {
-	[ -z "$1" ] && return 1
+	[ -n "$1" ] || return 1
 
 	if [ -S "$1" ]; then
 		export SSH_AUTH_SOCK="$1"
 		ssh-add -l >/dev/null 2>&1
 		if [ $? -eq 2 ]; then
 			rm -f "$SSH_AUTH_SOCK"
-			print_warning "Socket $SSH_AUTH_SOCK is dead! Deleted!"
+			print_warning "Socket '$SSH_AUTH_SOCK' is dead! Deleted!"
+			return 1
 		fi
 	else
-		print_warning "$SSH_AUTH_SOCK is not a socket!"
+		print_warning "'$SSH_AUTH_SOCK' is not a socket!"
+		return 1
 	fi
 }
 
