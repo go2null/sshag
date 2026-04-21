@@ -80,7 +80,7 @@ sshag_require_ssh() {
 }
 
 
-# == Get/Start SSH-AGENT ==
+# == Get/Start SSH-AGENT == #
 
 # $1 - optional. Agent Socket
 sshag_agent_get_socket() {
@@ -154,7 +154,7 @@ sshag_agent_print_notice() {
 }
 
 
-# == SSH wrapper ==
+# == SSH wrapper == #
 
 # Load first key for specified user@hostname and start `ssh`.
 # $1 - required. user@host
@@ -170,6 +170,9 @@ sshag_ssh() {
 	# on multiple machines where only some support AddKeysToAgent.
 	# (OpenSSH before v7.2 barfs on params it doesn't know about so can't use
 	# it in a common ssh_config where some machines have pre v7.2 OpenSSH.)
+
+	# ensure ssh-agent is active
+	sshag
 
 	unset ssh_opts
 
