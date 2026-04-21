@@ -22,6 +22,7 @@ sshag_is_sourced() {
 	[ "${0%sshag.sh}" = "$0" ] && return 0 || return 1
 }
 
+
 # == MAIN == #
 
 # Only allow to source file once.
@@ -64,7 +65,7 @@ sshag() {
 	fi
 
 	if sshag_is_sourced; then
-		sshag_print_or_add_keys
+		sshag_agent_print_or_add_keys
 	elif [ -n "$user_host" ]; then
 		sshag_ssh "$user_host" "$@"
 	else
@@ -77,6 +78,7 @@ sshag_require_ssh() {
 		require_command "$app"
 	done
 }
+
 
 # == Get/Start SSH-AGENT ==
 
@@ -129,6 +131,17 @@ sshag_agent_new_socket() {
 	eval "$(ssh-agent)"
 }
 
+# Ensure keys are loaded
+sshag_agent_print_or_add_keys() {
+	if keys="$(ssh-add -l 2>/dev/null)"; then
+		# Display keys currently loaded in the agent
+		print_info "Keys:"
+		print_info "$(printf '* %s' "$keys")"
+	else
+		ssh-add
+	fi
+}
+
 sshag_agent_print_notice() {
 	print_info "$(cat <<- NOTICE
 
@@ -140,16 +153,6 @@ sshag_agent_print_notice() {
 	)"
 }
 
-# Ensure keys are loaded
-sshag_print_or_add_keys() {
-	if keys="$(ssh-add -l 2>/dev/null)"; then
-		# Display keys currently loaded in the agent
-		print_info "Keys:"
-		print_info "$(printf '* %s' "$keys")"
-	else
-		ssh-add
-	fi
-}
 
 # == SSH wrapper ==
 
