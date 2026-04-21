@@ -4,24 +4,30 @@
 #	http://superuser.com/questions/141044/sharing-the-same-ssh-agent-among-multiple-login-sessions#answer-141241
 # Project at: https://github.com/go2null/sshag
 
+
+# == LOAD ONCE == #
+
 sshag_function_is_defined() {
 	type sshag >/dev/null 2>&1 && return 0 || return 1
 }
 
+# $0 is set to filename (and any leading path) if invoked as a script.
+#		so if $0 does not end with the filename, then it is sourced.
+#	When sourced,
+#		POSIX - $0 is undefined
+#		bash  - set to `*bash`
+#		zsh   - in the main script scope - same as when called as a script.
+#		      - within a function        - name of the function, as here.
 sshag_is_sourced() {
-	# zsh appends `:file` to `$ZSH_EVAL_CONTEXT` when sourced
-	if [ -n "${ZSH_VERSION:-}" ]; then
-		[ "${ZSH_EVAL_CONTEXT#*:file}" = "$ZSH_EVAL_CONTEXT" ] || return 0
-		return 1
-	fi
-
-	[ "${0#*sshag}" = "$0" ] && return 0 || return 1
+	[ "${0%sshag.sh}" = "$0" ] && return 0 || return 1
 }
+
+# == MAIN == #
 
 # Only allow to source file once.
 # This simplifies the installation by adding to all the dot profiles
 #   and only source once.
-sshag_function_is_defined && sshag_is_sourced && return 0
+sshag_function_is_defined && sshag_is_sourced && return 0 || :
 
 # USAGE
 # sshag install   [TARGET_DIR]           - install/update
