@@ -187,7 +187,7 @@ sshag_ssh() {
 		ssh_opts='-o AddKeysToAgent=yes'
 	else
 		# This is needed for OpenSSH pre v7.2, before AddKeysToAgent was added
-		sshag_ssh_add_key_to_agent "$user_host"
+		sshag_ssh_add_key_to_agent "$user_host" || : # let ssh emit its own error
 	fi
 
 	# `$ssh_opts` may be unset, quoting it will pass an empty string to `ssh`
@@ -197,8 +197,9 @@ sshag_ssh() {
 
 # Checks if ~/.ssh/config has AddKeysToAgent
 sshag_ssh_config_has_add_keys() {
-	grep '^[[:blank:]]*AddKeysToAgent' \
-		"$HOME/.ssh/config" "/etc/ssh/ssh_config" >/dev/null 2>&1
+	grep '^[[:blank:]]*AddKeysToAgent'                          \
+		"$HOME/.ssh/config" "/etc/ssh/ssh_config" >/dev/null 2>&1 \
+	&& return 0 || return 1
 }
 
 # This is needed for OpenSSH before v7.2 which added support AddKeysToAgent
@@ -206,29 +207,34 @@ sshag_ssh_config_has_add_keys() {
 #   but it is not set in the ~/.ssh/config
 # $1 - required. user@host
 sshag_ssh_add_key_to_agent() {
-	sshag_ssh_is_identity_loaded "$1" && return
+	sshag_ssh_is_identity_loaded "$1" && return 0 || :
 
 	# load identity if one is defined for the user@hostname.
-	sshag_identity="$(sshag_ssh_get_identity "$1")"
-	if [ -n "$sshag_identity" ] && ! ssh-add "$sshag_identity"; then
-		print_error "Unable to load identity $sshag_identity!"
+	if sshag_identity="$(sshag_ssh_get_identity "$1")"; then
+		ssh-add "$sshag_identity"       && return 0 || :
 	fi
+
+	print_error "Unable to load identity '$sshag_identity'!"
+	return 1
 }
 
 # $1 - required. user@host
 sshag_ssh_is_identity_loaded() {
-	echo 'exit' | ssh -o BatchMode=yes -- "$1" 2>/dev/null
+	echo 'exit' | ssh -o BatchMode=yes -- "$1" 2>/dev/null && return 0 || return 1
 }
 
 # $1 - required. user@host
 sshag_ssh_get_identity() {
 	sshag_identity="$(ssh -v -o BatchMode=yes "$1" 2>&1 \
-		| awk ' /identity file/ { print $4 } ' \
+		| awk ' /identity file/ { print $4 } '            \
 		| head -n 1)"
 
-	[ -n "$sshag_identity" ] \
-		&& sshag_identity="$(realpath -m "$sshag_identity")" \
-		&& printf '%s' "$sshag_identity"
+	if [ -n "$sshag_identity" ]; then
+		sshag_identity="$(realpath -m "$sshag_identity")"
+		printf '%s' "$sshag_identity"
+	else
+		return 1
+	fi
 }
 
 # == INSTALL ==
