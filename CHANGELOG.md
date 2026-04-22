@@ -8,10 +8,17 @@ and this project adheres to [Semantic Versioning].
 ## [Unreleased]
 ### Added
 ### Changed
+* 2026-04-21 8fa6c8b 💥 __BREAKING__ install: use [UAPI](https://uapi-group.org/specifications/specs/linux_file_system_hierarchy/#locallib)
+LIB directory [go2null]
+  standard.
 ### Deprecated
 ### Removed
 ### Fixed
+* 2026-04-21 a32cb26 🐛 fix: ensure ssh agent is loaded before using ssh [go2null]
+* 2026-01-03 a53c3a9 🐛 fix logic bug - exit with success status if already sourced [go2null]
 ### Security
+* 2026-04-21 e643931 🥅 add error trapping to sshag_ssh_* [go2null]
+* 2026-01-03 fa4dc98 🥅 use explicit return codes [go2null]
 
 ## [3.0.3] - 2025-04-23
 ### Added
