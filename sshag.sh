@@ -38,45 +38,22 @@ sshag_function_is_defined && sshag_is_sourced && return 0 || :
 # sshag AGENT_SOCKET                     - use specified agent
 # sshag USER@HOST [SSH_OPTIONS_AND_ARGS] - start agent and ssh to USER@HOST
 sshag() {
-	agent_socket=''
-	user_host=''
-
-	while [ $# -gt 0 ]; do
+	if [ $# -gt 0 ]; then
 		case "$1" in
-		install)   shift; sshag_install 'install' "$@"; return $? ;;
-		update)    shift; sshag_install 'update'  "$@"; return $? ;;
-		uninstall) shift; sshag_install 'remove'  "$@"; return $? ;;
-		remove)    shift; sshag_install 'remove'  "$@"; return $? ;;
-		-*) break ;; # SSH options
-		*)
-			if [ -e "$1" ] ; then
-				agent_socket="$1"
-			else
-				user_host="$1"
-			fi
-			;;
+			install)   shift; sshag_install 'install' "$@"; return $?    ;;
+			update)    shift; sshag_install 'update'  "$@"; return $?    ;;
+			uninstall) shift; sshag_install 'remove'  "$@"; return $?    ;;
+			remove)    shift; sshag_install 'remove'  "$@"; return $?    ;;
+			*)         [ -e "$1" ] || { sshag_ssh     "$@"; return $?; } ;;
 		esac
-		shift
-	done
-
-	sshag_require_ssh
-	if [ -n "$agent_socket" ]; then
-		sshag_agent_get_socket "$agent_socket"
 	fi
 
 	if sshag_is_sourced; then
-		sshag_agent_print_or_add_keys
-	elif [ -n "$user_host" ]; then
-		sshag_ssh "$user_host" "$@"
+		sshag_agent_get_socket "$1"
+		sshag_print_or_add_keys
 	else
 		sshag_agent_print_notice
 	fi
-}
-
-sshag_require_ssh() {
-	for app in ssh ssh-add ssh-agent; do
-		require_command "$app"
-	done
 }
 
 
@@ -242,8 +219,9 @@ sshag_ssh_get_identity() {
 
 # $1 - required. action - install, update, or remove
 # $2 - optional. install directory
-sshag_install() {
-	require_command 'git'
+sshag_install() (
+	check_commands 'ssh' 'ssh-add' 'ssh-agent'
+	check_commands -require 'git'
 
 	dir="$(sshag_install_path "$2")"
 	dir="${dir%/sshag}" # strip 'sshag' from path, as necessary
@@ -410,22 +388,33 @@ sshag_remove_profile() {
 
 # == HELPERS == #
 
+# $1 - -require. OPTIONAL
+check_commands() {
+	[ "$1" = '-require' ] && { require=1; shift; } || require=''
+
+	for cmd in "$@"; do
+		if [ ! -x "$(command -v "$cmd")" ]; then
+			if [ -n "$require" ]; then
+				print_fatal   "'$cmd' is not available! Aborting!"
+			else
+				print_warning "'$cmd' is not available! Please install it."
+			fi
+		fi
+	done
+}
+
 print_line()    { printf '%s\n' "$*"; }
 
 print_stderr()  { print_line "$@" >&2; }
 # Do not send messages to 'stdout'
 # - it is reserved for outputting $SSH_AUTH_SOCH when invoked in a subshell
 
+print_debug()   { print_stderr "DEBUG:   $*"; return 0; }
 print_error()   { print_stderr "ERROR:   $*"; return 0; }
 print_fatal()   { print_stderr "FATAL:   $*"; exit   1; }
 print_info()    { print_stderr "INFO:    $*"; return 0; }
 print_warning() { print_stderr "WARNING: $*"; return 0; }
 
-require_command() {
-	if [ ! -x "$(command -v "$1")" ]; then
-		print_fatal "$1 is not available! aborting!"
-	fi
-}
 
 # == HOOK ==
 
