@@ -237,6 +237,7 @@ sshag_ssh_get_identity() {
 	fi
 }
 
+
 # == INSTALL ==
 
 # $1 - required. action - install, update, or remove
@@ -246,8 +247,9 @@ sshag_install() {
 
 	dir="$(sshag_install_path "$2")"
 	dir="${dir%/sshag}" # strip 'sshag' from path, as necessary
+	dir="$dir/sshag"
 
-	if [ -d "$dir/sshag" ]; then
+	if [ -d "$dir" ]; then
 		case "$1" in
 		install|update)
 			sshag_update "$dir"
@@ -260,21 +262,22 @@ sshag_install() {
 		esac
 	fi
 
-	[ "$1" = 'remove' ] \
-		&& print_fatal "Cannot detect where 'sshag' is installed"
+	if [ "$1" = 'remove' ]; then
+		print_fatal "Cannot detect where 'sshag' is installed"
+	fi
 
 	print_info "Installing to $dir."
 	sshag_install_download "$dir"
 
 	print_info "Adding to startup files"
-	sshag_config=". '$dir/sshag/sshag.sh'"
+	sshag_config=". '$dir/sshag.sh'"
 	sshag_install_profiles "$sshag_config"
 	sshag_install_manual   "$sshag_config"
 }
 
 # $1 - optional. install parent directory
 # Use LIB directory specified by UAPI (SystemD's FileSystem Hierarchy successor)
-# https://uapi-group.org/specifications/specs/linux_file_system_hierarchy/#localbin
+# https://uapi-group.org/specifications/specs/linux_file_system_hierarchy/#locallib
 sshag_install_path() {
 	unset dir
 
@@ -297,7 +300,7 @@ sshag_install_path() {
 		fi
 	fi
 
-	[ -d "$dir" ] || mkdir -p "$dir" || print_fatal "  Cannot create directory $dir."
+	[ -d "$dir" ] || mkdir -p "$dir" || print_fatal "  Cannot create directory '$dir'."
 	printf '%s' "$dir"
 }
 
@@ -317,12 +320,10 @@ sshag_install_migrate() {
 }
 
 # $1 - required. install directory
-sshag_install_download() (
-	cd "$1" || print_fatal "  Cannot access $1."
-
-	git clone 'https://github.com/go2null/sshag.git' \
-		|| print_fatal "  'git clone' failed with above error."
-)
+sshag_install_download() {
+	git clone 'https://github.com/go2null/sshag.git' "$1" \
+	|| print_fatal "  'git clone' failed with above error."
+}
 
 # add to shell startup files
 # $1 - required. sshag config line
@@ -363,15 +364,15 @@ sshag_install_manual() {
 
 # $1 - required. install directory
 sshag_update() {
-	print_info "Updating 'sshag' at $1."
-	cd "$1/sshag" || print_fatal "  Cannot accees $1/sshag."
+	print_info "Updating 'sshag' at '$1'."
+	cd "$1" || print_fatal "  Cannot access '$1'."
 	git pull
 }
 
 # $1 - required. install directory
 sshag_remove() {
-	print_info "Removing 'sshag' at $1."
-	rm -rf "$1/sshag"
+	print_info "Removing 'sshag' at '$1'."
+	rm -rf "$1"
 
 	print_info "Removing from startup files"
 	sshag_remove_profiles
@@ -379,7 +380,7 @@ sshag_remove() {
 
 sshag_remove_profiles() {
 	file='/etc/profile.d/sshag.sh'
-	[ -w "$file" ] && print_info "  REMOVED $file." && rm "$file"
+	[ -w "$file" ] && rm "$file" && print_info "  REMOVED '$file'."
 
 	files="/etc/profile
 $HOME/.profile
@@ -403,10 +404,11 @@ sshag_remove_profile() {
 	[ ! -w "$1" ] && print_warning "    SKIPPED, cannot edit file." && return 0
 
 	sed -i.bak '/.*sshag.sh.*/ d' "$1" \
-		|| print_warning "    FAILED to remove from file."
+	|| print_warning "    FAILED to remove from file."
 }
 
-# == HELPERS ==
+
+# == HELPERS == #
 
 print_line()    { printf '%s\n' "$*"; }
 
