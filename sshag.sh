@@ -47,7 +47,7 @@ sshag() {
 		update)    shift; sshag_install 'update'  "$@"; return $? ;;
 		uninstall) shift; sshag_install 'remove'  "$@"; return $? ;;
 		remove)    shift; sshag_install 'remove'  "$@"; return $? ;;
-		-*) break ;; # ssh options
+		-*) break ;; # SSH options
 		*)
 			if [ -e "$1" ] ; then
 				agent_socket="$1"
@@ -92,7 +92,7 @@ sshag_agent_get_socket() {
 
 	# If there is no agent in the environment,
 	#  search for any agent to reuse before starting a fresh ssh-agent process.
-	# ssh agent sockets can be attached to an ssh daemon process
+	# SSH agent sockets can be attached to an SSH daemon process
 	#  or an ssh-agent process.
 	for agent_socket in $(sshag_agent_find_sockets); do
 		sshag_agent_vet_socket "$agent_socket" && return 0 || :
@@ -156,12 +156,12 @@ sshag_agent_print_notice() {
 
 # == SSH wrapper == #
 
-# Load first key for specified user@hostname and start `ssh`.
+# Load first key for specified user@hostname and start SSH.
 # $1 - required. user@host
-# $@ - optional. ssh options
+# $@ - optional. SSH options
 sshag_ssh() {
 	# This is needed for OpenSSH before v7.2 which added support AddKeysToAgent
-	# Or if the local ssh client support AddKeysToAgent,
+	# Or if the local SSH client support AddKeysToAgent,
 	# but it is not set in the ~/.ssh/config
 
 	# OpenSSH v7.2 added support for AddKeysToAgent.
@@ -183,14 +183,14 @@ sshag_ssh() {
 		# Honor AddKeysToAgent settings
 		: # do nothing
 	elif ssh -o AddKeysToAgent 2>&1 | grep 'missing argument' >/dev/null; then
-		# If this ssh supports AddKeyToAgent, then use it
+		# If this SSH supports AddKeyToAgent, then use it
 		ssh_opts='-o AddKeysToAgent=yes'
 	else
 		# This is needed for OpenSSH pre v7.2, before AddKeysToAgent was added
-		sshag_ssh_add_key_to_agent "$user_host" || : # let ssh emit its own error
+		sshag_ssh_add_key_to_agent "$user_host" || : # let SSH emit its own error
 	fi
 
-	# `$ssh_opts` may be unset, quoting it will pass an empty string to `ssh`
+	# `$ssh_opts` may be unset, quoting it will pass an empty string to SSH
 	# shellcheck disable=SC2086,SC2029
 	ssh "$@" $ssh_opts "$user_host"
 }
@@ -203,7 +203,7 @@ sshag_ssh_config_has_add_keys() {
 }
 
 # This is needed for OpenSSH before v7.2 which added support AddKeysToAgent
-# Or if the local ssh client support AddKeysToAgent,
+# Or if the local SSH client support AddKeysToAgent,
 #   but it is not set in the ~/.ssh/config
 # $1 - required. user@host
 sshag_ssh_add_key_to_agent() {
