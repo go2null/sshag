@@ -5,6 +5,17 @@
 # Project at: https://github.com/go2null/sshag
 
 
+# == DEBUG CONFIG == #
+
+# For debugging with `set -x` or `sh -x SCRIPT`
+export PS4='+ ${0}:${LINENO}: '
+
+# Enable 'pipefail' if the current /bin/sh supports it (POSIX Issue 8 shells do)
+#   This avoids "set: Illegal option -o pipefail" on older shells.
+# shellcheck disable=SC3040 # pipefail is conditionally set
+(set -o pipefail) 2>/dev/null && set -o pipefail || :
+
+
 # == LOAD ONCE == #
 
 sshag_function_is_defined() {
@@ -38,19 +49,17 @@ sshag_function_is_defined && sshag_is_sourced && return 0 || :
 # sshag AGENT_SOCKET                     - use specified agent
 # sshag USER@HOST [SSH_OPTIONS_AND_ARGS] - start agent and ssh to USER@HOST
 sshag() {
-	if [ $# -gt 0 ]; then
-		case "$1" in
-			install)   shift; sshag_install 'install' "$@"; return $?    ;;
-			update)    shift; sshag_install 'update'  "$@"; return $?    ;;
-			uninstall) shift; sshag_install 'remove'  "$@"; return $?    ;;
-			remove)    shift; sshag_install 'remove'  "$@"; return $?    ;;
-			*)         [ -e "$1" ] || { sshag_ssh     "$@"; return $?; } ;;
-		esac
-	fi
-
-	if sshag_is_sourced; then
+	if sshag_is_sourced || { [ $# -gt 0 ] && [ -e "$1" ]; }; then
 		sshag_agent_get_socket "$1"
-		sshag_print_or_add_keys
+		sshag_agent_print_or_add_keys
+	elif [ $# -gt 0 ]; then
+		case "$1" in
+			install)   shift; sshag_install 'install' "$@"; return $? ;;
+			update)    shift; sshag_install 'update'  "$@"; return $? ;;
+			uninstall) shift; sshag_install 'remove'  "$@"; return $? ;;
+			remove)    shift; sshag_install 'remove'  "$@"; return $? ;;
+			*)         sshag_ssh "$@";                      return $? ;;
+		esac
 	else
 		sshag_agent_print_notice
 	fi
@@ -219,7 +228,7 @@ sshag_ssh_get_identity() {
 
 # $1 - required. action - install, update, or remove
 # $2 - optional. install directory
-sshag_install() (
+sshag_install() {
 	check_commands 'ssh' 'ssh-add' 'ssh-agent'
 	check_commands -require 'git'
 
