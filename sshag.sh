@@ -93,15 +93,18 @@ sshag_agent_vet_socket() {
 	[ -n "$1" ] || return 1
 
 	if [ -S "$1" ]; then
-		export SSH_AUTH_SOCK="$1"
-		ssh-add -l >/dev/null 2>&1
+		# shellcheck disable=SC2030 # this is a check; do not ovewrite SSH_AUTH_SOCK
+		( export SSH_AUTH_SOCK="$1"; ssh-add -l >/dev/null 2>&1; )
 		if [ $? -eq 2 ]; then
-			rm -f "$SSH_AUTH_SOCK"
-			print_warning "Socket '$SSH_AUTH_SOCK' is dead! Deleted!"
+			rm -f "$1"
+			print_warning "Socket '$1' is dead! Deleted!"
 			return 1
+		else
+			# shellcheck disable=SC2031 # subshell use above was just a check
+			export SSH_AUTH_SOCK="$1"
 		fi
 	else
-		print_warning "'$SSH_AUTH_SOCK' is not a socket!"
+		print_warning "'$1' is not a socket!"
 		return 1
 	fi
 }
