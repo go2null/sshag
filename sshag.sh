@@ -30,7 +30,7 @@ sshag_function_is_defined() {
 #		zsh   - in the main script scope - same as when called as a script.
 #		      - within a function        - name of the function, as here.
 sshag_is_sourced() {
-	[ "${0%sshag.sh}" = "$0" ] && return 0 || return 1
+	[ "${0##*/}" = 'sshag.sh' ] && return 1 || return 0
 }
 
 
