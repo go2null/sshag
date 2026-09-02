@@ -99,6 +99,19 @@ probes for support by running `ssh -o AddKeysToAgent` and grepping for
 identity file. The probe exists because a shared ssh_config may be used
 on machines whose OpenSSH predates the option and would barf on it.
 
+### Changelog follows Common Changelog
+
+Converted from Keep a Changelog. Only `Changed`, `Added`, `Removed`,
+`Fixed` are used, in that order, and there is no `Unreleased` section:
+entries are added under the release they ship in. Entries are
+imperative, self-describing without their heading, and carry commit
+links in parentheses at the end. Do not paste `git log` output, and do
+not record dotfile or formatting churn.
+
+Note that release tags are inconsistent in this repo: `0.0.0` through
+`2.0.0` are unprefixed, `v3.0.0` onward carry a `v`. The comparison
+links reflect that; check the actual tag before adding a new one.
+
 ## Known issues
 
 * `README.md` says the output "will always consist of just the socket
@@ -109,6 +122,3 @@ on machines whose OpenSSH predates the option and would barf on it.
 * Several functions assign unprefixed globals (`dir`, `keys`,
   `ssh_opts`, `user_host`, `agent_socket`, `file`) that leak into the
   user's interactive shell, since the file is sourced there
-* `CHANGELOG.md` is still in Keep a Changelog form with emoji and commit
-  hashes in entries, contrary to the Common Changelog convention.
-  Converting it is a separate, deliberate change — ask first

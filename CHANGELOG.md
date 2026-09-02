@@ -2,112 +2,180 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog]
-and this project adheres to [Semantic Versioning].
+The format is based on [Common Changelog], and this project adheres to
+[Semantic Versioning].
 
-## [Unreleased]
-### Added
+## [4.0.0] - 2026-09-02
+
+_This release moves installations to the UAPI lib directory. Existing
+installations are migrated automatically on update._
+
 ### Changed
-* 2026-04-21 8fa6c8b 💥 __BREAKING__ install: use [UAPI](https://uapi-group.org/specifications/specs/linux_file_system_hierarchy/#locallib)
-LIB directory [go2null]
-  standard.
-### Deprecated
-### Removed
-### Fixed
-* 2026-04-21 a32cb26 🐛 fix: ensure ssh agent is loaded before using ssh [go2null]
-* 2026-01-03 a53c3a9 🐛 fix logic bug - exit with success status if already sourced [go2null]
-### Security
-* 2026-04-21 e643931 🥅 add error trapping to sshag_ssh_* [go2null]
-* 2026-01-03 fa4dc98 🥅 use explicit return codes [go2null]
 
-## [3.0.3] - 2025-04-23
-### Added
-* _go2null_: 🔨 devex: set git EOL and EditorConfig defaults
+* **Breaking:** Install into the lib directory specified by the [UAPI
+  file system hierarchy] rather than the XDG data directory, which has
+  no place for architecture-dependent files
+  ([`0eb9228`](https://github.com/go2null/sshag/commit/0eb9228))
+* **Breaking:** Resolve the full install path, including the `sshag`
+  directory, in one place, so it no longer differs between install,
+  update, and removal
+  ([`d9026b7`](https://github.com/go2null/sshag/commit/d9026b7))
+* State both outcomes of every command whose status matters, so a
+  handled failure no longer propagates to the caller
+  ([`6396461`](https://github.com/go2null/sshag/commit/6396461),
+  [`8f2cb0b`](https://github.com/go2null/sshag/commit/8f2cb0b))
+* Always end socket lookup with a usable agent, starting one when none
+  can be reused
+  ([`1689afa`](https://github.com/go2null/sshag/commit/1689afa))
+* Detect sourcing from the script name alone, dropping the
+  zsh-specific evaluation-context check
+  ([`576848d`](https://github.com/go2null/sshag/commit/576848d),
+  [`aea8879`](https://github.com/go2null/sshag/commit/aea8879))
+* Dispatch on the first argument only, instead of classifying every
+  argument in a loop
+  ([`d52e8e5`](https://github.com/go2null/sshag/commit/d52e8e5))
+
+### Fixed
+
+* Start the agent before connecting to a host, so passing a `user@host`
+  directly no longer prompts for the key passphrase
+  ([`98ed0d2`](https://github.com/go2null/sshag/commit/98ed0d2))
+* Stop treating the arguments a login shell passes when sourcing the
+  file as a hostname
+  ([`503de89`](https://github.com/go2null/sshag/commit/503de89))
+* Report success when the script is sourced a second time, so adding it
+  to several dot profiles does not look like a failure
+  ([`7711e17`](https://github.com/go2null/sshag/commit/7711e17))
+* Leave `SSH_AUTH_SOCK` untouched while vetting a candidate socket, and
+  name the socket under test in the resulting warnings
+  ([`a0fd541`](https://github.com/go2null/sshag/commit/a0fd541))
+* Restore the tracing setup and argument dispatch dropped by an earlier
+  simplification
+  ([`1eb6a11`](https://github.com/go2null/sshag/commit/1eb6a11))
+
+## [3.0.3] - 2025-04-17
+
+_No user-facing changes._
 
 ## [3.0.2] - 2025-04-04
+
 ### Changed
-* _go2null_: 💄 removed extra whitespace from keys list
-* _go2null_: ⬆️ pearl: update to new standard
+
+* Remove extra whitespace from the list of loaded keys
+* Update the pearl package configuration to the current standard
 
 ## [3.0.1] - 2025-04-03
-### Fixed
-* _go2null_: ✏️ removed example code
 
-## [3.0.0] - 2025-04-03
-### Added
-* _go2null_: ✨ runs ssh-add automatically when shell starts
-* _go2null_: ✨ migrate existing installs to the new location
-### Changed
-* _go2null_: __BREAKING__: 💥 install to XDG_DATA_DIR/lib Directory
 ### Fixed
-* _go2null_: 🐛 fix detecting when sourced in ZSH
 
-## [2.0.0] - 2022-04-01
-### Fixed
-* _go2null_: Fix bug #2 path to LICENSE.
-### Added
-* _go2null_: Ability to uninstall.
+* Remove example code left in the script
+
+## [3.0.0] - 2025-04-02
+
 ### Changed
-* _go2null_: __BREAKING__: install now defaults to _system_ only if running as `root`.
-* _go2null_: __BREAKING__: install now defaults to `~/.local/lib` per `systemd` standard.
+
+* **Breaking:** Install into `XDG_DATA_DIR/lib`, migrating existing
+  installations to the new location
+
+### Added
+
+* Run `ssh-add` automatically when the shell starts
+
+### Fixed
+
+* Detect correctly when the script is sourced under zsh
+
+## [2.0.0] - 2022-04-02
+
+### Changed
+
+* **Breaking:** Install system-wide only when running as `root`
+* **Breaking:** Install to `~/.local/lib`, per the systemd standard
+
+### Added
+
+* Add the ability to uninstall
+
+### Fixed
+
+* Correct the path to `LICENSE` (#2)
 
 ## [1.3.1] - 2018-02-19
-### Added
-* _go2null_: Added support for [pearl] shell package manager.
+
 ### Changed
-* _go2null_: Replaced regular `git` tags with annotated tags with changelog.
-* _go2null_: Moved __History__ section from `README.markdown` to `CHANGELOG.md`.
-* _go2null_: Renamed `README.markdown` to `README.md`.
+
+* Move the history section out of the readme and into this changelog
+
+### Added
+
+* Add support for the [pearl] shell package manager
 
 ## [1.3.0] - 2018-01-17
+
 ### Added
-* _go2null_: Allow passing arguments/options to `ssh`.
-* _go2null_: New `install` and `update` functions.
+
+* Allow passing arguments and options through to SSH
+* Add `install` and `update` subcommands
 
 ## [1.2.1] - 2017-10-07
-## Added
-* _go2null_: Check if `ssh` supports `AddKeysToAgent` flag.
-## Changed
-* _go2null_: Fixed detection of identity files.
-* _go2null_: Fixed grep error when config file not found.
+
+### Added
+
+* Check whether SSH supports the `AddKeysToAgent` option
+
+### Fixed
+
+* Correct the detection of identity files
+* Suppress the `grep` error raised when the config file is absent
 
 ## [1.2.0] - 2016-08-25
-### Added
-* _go2null_: Search `$TMPDIR` for agents as well, per OpenSSH man page.
-* _go2null_: Accept socket passed in.
-* _go2null_: Can now use `sshag user@domain` instead of `ssh user@domain`.
+
 ### Changed
-* _go2null_: Make script POSIX compliant.
+
+* Make the script POSIX compliant
+
+### Added
+
+* Search `$TMPDIR` for agents as well, per the OpenSSH man page
+* Accept an agent socket passed as an argument
+* Accept `sshag user@domain` as a replacement for `ssh user@domain`
 
 ## [1.1.0] - 2011-02-20
+
 ### Added
-* _intuited_: Made it convenient to run the script in a subshell.
+
+* Make it convenient to run the script in a subshell (_intuited_)
 
 ## [1.0.0] - 2010-07-26
-### Added
-* _intuited_: Add readme and license documents.
+
 ### Changed
-* _intuited_: __BREAKING__: Renamed from `sagent` to `sshag`.
+
+* **Breaking:** Rename from `sagent` to `sshag` (_intuited_)
+
+### Added
+
+* Add readme and license documents (_intuited_)
 
 ## [0.0.0] - 2010-05-14
-### Added
-* _Zed_: http://superuser.com/a/141241
 
+_Initial release, from the [original answer] on superuser.com (_Zed_)._
 
-[Keep a Changelog]:    http://keepachangelog.com
-[Semantic Versioning]: http://semver.org
-[pearl]:               https://github.com/pearl-core/pearl#installation
+[Common Changelog]: https://common-changelog.org
+[Semantic Versioning]: https://semver.org
+[UAPI file system hierarchy]: https://uapi-group.org/specifications/specs/linux_file_system_hierarchy/#locallib
+[original answer]: https://superuser.com/a/141241
+[pearl]: https://github.com/pearl-core/pearl#installation
 
-[Unreleased]: https://github.com/go2null/sshag/compare/3.0.3...HEAD
-[3.0.3]:      https://github.com/go2null/sshag/compare/3.0.2...3.0.3
-[3.0.2]:      https://github.com/go2null/sshag/compare/3.0.1...3.0.2
-[3.0.1]:      https://github.com/go2null/sshag/compare/3.0.0...3.0.1
-[3.0.0]:      https://github.com/go2null/sshag/compare/2.0.0...3.0.0
-[2.0.0]:      https://github.com/go2null/sshag/compare/1.3.0...2.0.0
-[1.3.1]:      https://github.com/go2null/sshag/compare/1.3.0...1.3.1
-[1.3.0]:      https://github.com/go2null/sshag/compare/1.2.1...1.3.0
-[1.2.1]:      https://github.com/go2null/sshag/compare/1.2.0...1.2.1
-[1.2.0]:      https://github.com/go2null/sshag/compare/1.1.0...1.2.0
-[1.1.0]:      https://github.com/go2null/sshag/compare/1.0.0...1.1.0
-[1.0.0]:      https://github.com/go2null/sshag/compare/0.0.0...1.0.0
-[0.0.0]:      https://github.com/go2null/sshag/releases/tag/0.0.0
+[4.0.0]: https://github.com/go2null/sshag/compare/v3.0.3...v4.0.0
+[3.0.3]: https://github.com/go2null/sshag/compare/v3.0.2...v3.0.3
+[3.0.2]: https://github.com/go2null/sshag/compare/v3.0.1...v3.0.2
+[3.0.1]: https://github.com/go2null/sshag/compare/v3.0.0...v3.0.1
+[3.0.0]: https://github.com/go2null/sshag/compare/2.0.0...v3.0.0
+[2.0.0]: https://github.com/go2null/sshag/compare/1.3.1...2.0.0
+[1.3.1]: https://github.com/go2null/sshag/compare/1.3.0...1.3.1
+[1.3.0]: https://github.com/go2null/sshag/compare/1.2.1...1.3.0
+[1.2.1]: https://github.com/go2null/sshag/compare/1.2.0...1.2.1
+[1.2.0]: https://github.com/go2null/sshag/compare/1.1.0...1.2.0
+[1.1.0]: https://github.com/go2null/sshag/compare/1.0.0...1.1.0
+[1.0.0]: https://github.com/go2null/sshag/compare/0.0.0...1.0.0
+[0.0.0]: https://github.com/go2null/sshag/releases/tag/0.0.0
