@@ -66,8 +66,21 @@ from historical paths. See `MEMORY.md` for the rationale of both.
   not sshag-specific drop the prefix (`check_commands`, `print_*`)
 * __All output goes to stderr__ via the `print_*` helpers; stdout is
   reserved. Never add a bare `printf` to stdout
-* __Explicit return codes__ — `cmd && return 0 || return 1`, and
-  `... && return 0 || :` where execution continues. Keep the `|| :`
+* __Explicit return codes; never `set -e`.__ Every command whose status
+  matters states both outcomes, in one of exactly three forms:
+
+  ```sh
+  cmd && true_handler || false_handler   # both outcomes handled
+  cmd && true_handler || :               # only success is interesting
+  cmd || false_handler                   # only failure is interesting
+  ```
+
+  The trailing `|| :` is mandatory, not decorative: it absorbs the
+  failing status that would otherwise become the function's return
+  value and abort a caller running under `set -e`. Never write
+  `|| false_handler && :` — the `&& :` is a no-op, since the `||` form
+  already ends on the handler's status. `set -e` is banned in this file
+  because it leaks into the sourcing shell; see `MEMORY.md`
 * __`shellcheck` directives are inline and commented__ with why they are
   disabled; follow that pattern rather than silencing globally
 * Avoid introducing new unprefixed shell variables — the file is sourced

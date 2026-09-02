@@ -34,12 +34,48 @@ Treat it as fragile.
 same source line be added to every dot profile without re-running.
 `return` at file scope is only legal when sourced, hence that ordering.
 
-### Explicit return codes and trailing `|| :`
+### Explicit return codes, and no `set -e`
 
-The style is `cmd && return 0 || return 1`, and `... && return 0 || :`
-where execution continues. The `|| :` is not noise: without it a failing
-last command aborts a caller running under `set -e`. Introduced in
-`fa4dc98` and `e643931`.
+Every command whose status matters must state both outcomes explicitly.
+One of these three forms, and nothing else:
+
+```sh
+cmd && true_handler || false_handler   # both outcomes handled
+cmd && true_handler || :               # only success is interesting
+cmd || false_handler                   # only failure is interesting
+```
+
+The trailing `|| :` is not noise. `cmd && true_handler` on its own ends
+on a failing status whenever `cmd` fails, so a "handled" failure still
+propagates: it becomes the function's return value, and it aborts a
+caller running under `set -e`. The `|| :` absorbs it.
+
+The third form needs no such guard, and must not be given one. `cmd ||
+false_handler` already ends on the handler's status, so appending
+`&& :` is a no-op that adds nothing under `set -e` either.
+
+Introduced in `fa4dc98` and `e643931`.
+
+The `return_0` branch was opened to add `set -e` instead. That was
+removed and will not come back:
+
+* When the file is sourced, `set -e` stays in effect in the user's
+  interactive shell, where the next failing command kills their session
+* A trailing `set +e` does not fix it. It clobbers rather than restores,
+  silently disabling `errexit` for a caller that had it on. A correct
+  restore must save `$-` first
+* Even a correct restore is unreachable on the paths that matter. The
+  file ends in a bare `sshag "$@"` hook, `sshag` returns from many
+  branches, and `print_fatal` calls `exit`. Any of those skips the
+  restore and leaks `errexit`
+* `set -e` is suppressed inside `&&`/`||` chains and `if` conditions,
+  which is where nearly every command in this script lives, so it would
+  rarely fire anyway
+* Its behaviour for failures inside functions differs between dash,
+  bash, and zsh, all three of which must be supported
+
+If `errexit` is ever wanted, scope it to the executed path only
+(`sshag_is_sourced || set -e`), where there is no caller to corrupt.
 
 ### stdout is reserved
 
